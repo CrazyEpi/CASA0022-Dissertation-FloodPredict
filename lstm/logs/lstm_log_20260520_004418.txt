@@ -1,0 +1,54 @@
+Data balance mode activated. Device: cuda
+Epoch 01 | Loss: 0.1881 | Num Acc: 35.70% | Flood Catch Rate (Recall): 37.19%
+Epoch 02 | Loss: 0.1032 | Num Acc: 44.83% | Flood Catch Rate (Recall): 47.92%
+Epoch 03 | Loss: 0.0789 | Num Acc: 50.92% | Flood Catch Rate (Recall): 52.06%
+Epoch 04 | Loss: 0.0663 | Num Acc: 55.10% | Flood Catch Rate (Recall): 54.59%
+Epoch 05 | Loss: 0.0585 | Num Acc: 57.70% | Flood Catch Rate (Recall): 56.33%
+Epoch 06 | Loss: 0.0503 | Num Acc: 61.33% | Flood Catch Rate (Recall): 58.63%
+Epoch 07 | Loss: 0.0455 | Num Acc: 63.55% | Flood Catch Rate (Recall): 59.76%
+Epoch 08 | Loss: 0.0419 | Num Acc: 65.87% | Flood Catch Rate (Recall): 60.49%
+Epoch 09 | Loss: 0.0389 | Num Acc: 67.55% | Flood Catch Rate (Recall): 61.43%
+Epoch 10 | Loss: 0.0377 | Num Acc: 68.37% | Flood Catch Rate (Recall): 62.07%
+Epoch 11 | Loss: 0.0786 | Num Acc: 51.78% | Flood Catch Rate (Recall): 52.80%
+Epoch 12 | Loss: 0.0528 | Num Acc: 59.34% | Flood Catch Rate (Recall): 58.05%
+Epoch 13 | Loss: 0.0463 | Num Acc: 62.69% | Flood Catch Rate (Recall): 59.31%
+Epoch 14 | Loss: 0.0450 | Num Acc: 63.45% | Flood Catch Rate (Recall): 59.64%
+Epoch 15 | Loss: 0.0390 | Num Acc: 66.62% | Flood Catch Rate (Recall): 61.15%
+Epoch 16 | Loss: 0.0371 | Num Acc: 67.86% | Flood Catch Rate (Recall): 61.91%
+Epoch 17 | Loss: 0.0341 | Num Acc: 70.02% | Flood Catch Rate (Recall): 62.47%
+Epoch 18 | Loss: 0.0325 | Num Acc: 71.24% | Flood Catch Rate (Recall): 63.30%
+Epoch 19 | Loss: 0.0312 | Num Acc: 72.30% | Flood Catch Rate (Recall): 64.02%
+Epoch 20 | Loss: 0.0305 | Num Acc: 72.84% | Flood Catch Rate (Recall): 63.53%
+Epoch 21 | Loss: 0.0530 | Num Acc: 59.53% | Flood Catch Rate (Recall): 58.24%
+Epoch 22 | Loss: 0.0406 | Num Acc: 65.20% | Flood Catch Rate (Recall): 61.00%
+Epoch 23 | Loss: 0.0374 | Num Acc: 67.46% | Flood Catch Rate (Recall): 61.47%
+Epoch 24 | Loss: 0.0349 | Num Acc: 69.06% | Flood Catch Rate (Recall): 62.30%
+Epoch 25 | Loss: 0.0341 | Num Acc: 69.82% | Flood Catch Rate (Recall): 62.74%
+Epoch 26 | Loss: 0.0311 | Num Acc: 72.05% | Flood Catch Rate (Recall): 63.76%
+Epoch 27 | Loss: 0.0298 | Num Acc: 73.02% | Flood Catch Rate (Recall): 64.04%
+Epoch 28 | Loss: 0.0290 | Num Acc: 73.97% | Flood Catch Rate (Recall): 64.30%
+Epoch 29 | Loss: 0.0279 | Num Acc: 74.87% | Flood Catch Rate (Recall): 64.84%
+Epoch 30 | Loss: 0.0275 | Num Acc: 75.23% | Flood Catch Rate (Recall): 64.63%
+Epoch 31 | Loss: 0.0468 | Num Acc: 62.69% | Flood Catch Rate (Recall): 59.29%
+Epoch 32 | Loss: 0.0352 | Num Acc: 68.77% | Flood Catch Rate (Recall): 61.94%
+Epoch 33 | Loss: 0.0320 | Num Acc: 70.97% | Flood Catch Rate (Recall): 62.87%
+Epoch 34 | Loss: 0.0314 | Num Acc: 71.63% | Flood Catch Rate (Recall): 63.10%
+Epoch 35 | Loss: 0.0302 | Num Acc: 72.77% | Flood Catch Rate (Recall): 63.69%
+Epoch 36 | Loss: 0.0286 | Num Acc: 73.94% | Flood Catch Rate (Recall): 64.19%
+Epoch 37 | Loss: 0.0275 | Num Acc: 74.84% | Flood Catch Rate (Recall): 64.55%
+Epoch 38 | Loss: 0.0267 | Num Acc: 75.60% | Flood Catch Rate (Recall): 64.84%
+Epoch 39 | Loss: 0.0259 | Num Acc: 76.28% | Flood Catch Rate (Recall): 65.40%
+Epoch 40 | Loss: 0.0257 | Num Acc: 76.51% | Flood Catch Rate (Recall): 65.40%
+Epoch 41 | Loss: 0.0365 | Num Acc: 67.61% | Flood Catch Rate (Recall): 61.79%
+Epoch 42 | Loss: 0.0302 | Num Acc: 72.30% | Flood Catch Rate (Recall): 63.22%
+Epoch 43 | Loss: 0.0297 | Num Acc: 72.75% | Flood Catch Rate (Recall): 63.24%
+Epoch 44 | Loss: 0.0288 | Num Acc: 73.56% | Flood Catch Rate (Recall): 63.97%
+Epoch 45 | Loss: 0.0278 | Num Acc: 74.42% | Flood Catch Rate (Recall): 64.07%
+Epoch 46 | Loss: 0.0267 | Num Acc: 75.43% | Flood Catch Rate (Recall): 64.63%
+Epoch 47 | Loss: 0.0260 | Num Acc: 76.05% | Flood Catch Rate (Recall): 64.90%
+Epoch 48 | Loss: 0.0251 | Num Acc: 76.86% | Flood Catch Rate (Recall): 65.11%
+Epoch 49 | Loss: 0.0249 | Num Acc: 77.16% | Flood Catch Rate (Recall): 65.61%
+Epoch 50 | Loss: 0.0245 | Num Acc: 77.42% | Flood Catch Rate (Recall): 65.88%
+Training complete. Performing evaluation on verification dataset...
+Final Validation Dataset Performance -> Nash-Sutcliffe Efficiency (NSE): 0.9470
+Plot visualization saved as: lstm_balanced_evaluation.png

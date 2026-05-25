@@ -1,0 +1,65 @@
+Training Start | Threshold(Scaled): 2.3053
+Epoch 01 | MSE Loss: 0.6231 | Num Acc: 19.56% | Flood Catch Rate (Recall): 0.93% | Val NSE: 0.5308
+Epoch 02 | MSE Loss: 0.5291 | Num Acc: 23.06% | Flood Catch Rate (Recall): 6.02% | Val NSE: 0.5200
+Epoch 03 | MSE Loss: 0.5110 | Num Acc: 23.41% | Flood Catch Rate (Recall): 6.94% | Val NSE: 0.5562
+Epoch 04 | MSE Loss: 0.4890 | Num Acc: 24.29% | Flood Catch Rate (Recall): 2.78% | Val NSE: 0.5805
+Epoch 05 | MSE Loss: 0.4647 | Num Acc: 25.84% | Flood Catch Rate (Recall): 3.70% | Val NSE: 0.5976
+Epoch 06 | MSE Loss: 0.4395 | Num Acc: 26.97% | Flood Catch Rate (Recall): 4.63% | Val NSE: 0.5926
+Epoch 07 | MSE Loss: 0.4221 | Num Acc: 27.33% | Flood Catch Rate (Recall): 6.02% | Val NSE: 0.5817
+Epoch 08 | MSE Loss: 0.4093 | Num Acc: 27.83% | Flood Catch Rate (Recall): 8.33% | Val NSE: 0.5741
+Epoch 09 | MSE Loss: 0.4012 | Num Acc: 28.21% | Flood Catch Rate (Recall): 5.56% | Val NSE: 0.5812
+Epoch 10 | MSE Loss: 0.3946 | Num Acc: 28.50% | Flood Catch Rate (Recall): 9.72% | Val NSE: 0.5421
+Epoch 11 | MSE Loss: 0.3838 | Num Acc: 28.70% | Flood Catch Rate (Recall): 7.41% | Val NSE: 0.5191
+Epoch 12 | MSE Loss: 0.3811 | Num Acc: 28.63% | Flood Catch Rate (Recall): 5.56% | Val NSE: 0.5143
+Epoch 13 | MSE Loss: 0.3854 | Num Acc: 28.30% | Flood Catch Rate (Recall): 7.41% | Val NSE: 0.5574
+Epoch 14 | MSE Loss: 0.4222 | Num Acc: 26.91% | Flood Catch Rate (Recall): 10.65% | Val NSE: 0.4014
+Epoch 15 | MSE Loss: 0.3877 | Num Acc: 27.83% | Flood Catch Rate (Recall): 6.48% | Val NSE: 0.4964
+Epoch 16 | MSE Loss: 0.4079 | Num Acc: 27.03% | Flood Catch Rate (Recall): 5.56% | Val NSE: 0.5385
+Epoch 17 | MSE Loss: 0.4530 | Num Acc: 25.50% | Flood Catch Rate (Recall): 3.24% | Val NSE: 0.5543
+Epoch 18 | MSE Loss: 0.4906 | Num Acc: 23.80% | Flood Catch Rate (Recall): 1.85% | Val NSE: 0.5477
+Epoch 19 | MSE Loss: 0.4767 | Num Acc: 24.06% | Flood Catch Rate (Recall): 4.63% | Val NSE: 0.5360
+Epoch 20 | MSE Loss: 0.4698 | Num Acc: 24.42% | Flood Catch Rate (Recall): 2.78% | Val NSE: 0.5370
+Epoch 21 | MSE Loss: 0.4580 | Num Acc: 24.43% | Flood Catch Rate (Recall): 4.63% | Val NSE: 0.5438
+Epoch 22 | MSE Loss: 0.4446 | Num Acc: 25.07% | Flood Catch Rate (Recall): 3.24% | Val NSE: 0.5409
+Epoch 23 | MSE Loss: 0.4328 | Num Acc: 25.71% | Flood Catch Rate (Recall): 2.31% | Val NSE: 0.5383
+Epoch 24 | MSE Loss: 0.4215 | Num Acc: 26.13% | Flood Catch Rate (Recall): 4.63% | Val NSE: 0.5245
+Epoch 25 | MSE Loss: 0.4037 | Num Acc: 26.95% | Flood Catch Rate (Recall): 6.94% | Val NSE: 0.5541
+Epoch 26 | MSE Loss: 0.3807 | Num Acc: 27.61% | Flood Catch Rate (Recall): 4.17% | Val NSE: 0.4957
+Epoch 27 | MSE Loss: 0.3647 | Num Acc: 29.05% | Flood Catch Rate (Recall): 4.17% | Val NSE: 0.5527
+Epoch 28 | MSE Loss: 0.3524 | Num Acc: 30.12% | Flood Catch Rate (Recall): 5.09% | Val NSE: 0.5499
+Epoch 29 | MSE Loss: 0.3576 | Num Acc: 30.01% | Flood Catch Rate (Recall): 2.31% | Val NSE: 0.5672
+Epoch 30 | MSE Loss: 0.3431 | Num Acc: 30.58% | Flood Catch Rate (Recall): 5.56% | Val NSE: 0.5391
+Epoch 31 | MSE Loss: 0.3473 | Num Acc: 30.58% | Flood Catch Rate (Recall): 3.70% | Val NSE: 0.5367
+Epoch 32 | MSE Loss: 0.3334 | Num Acc: 30.71% | Flood Catch Rate (Recall): 4.17% | Val NSE: 0.5299
+Epoch 33 | MSE Loss: 0.3223 | Num Acc: 31.50% | Flood Catch Rate (Recall): 5.09% | Val NSE: 0.5460
+Epoch 34 | MSE Loss: 0.3312 | Num Acc: 31.11% | Flood Catch Rate (Recall): 2.31% | Val NSE: 0.4434
+Epoch 35 | MSE Loss: 0.3314 | Num Acc: 30.81% | Flood Catch Rate (Recall): 6.02% | Val NSE: 0.5689
+Epoch 36 | MSE Loss: 0.3158 | Num Acc: 31.67% | Flood Catch Rate (Recall): 5.56% | Val NSE: 0.5698
+Epoch 37 | MSE Loss: 0.3316 | Num Acc: 31.05% | Flood Catch Rate (Recall): 4.17% | Val NSE: 0.5660
+Epoch 38 | MSE Loss: 0.3177 | Num Acc: 31.58% | Flood Catch Rate (Recall): 5.09% | Val NSE: 0.5498
+Epoch 39 | MSE Loss: 0.3230 | Num Acc: 31.61% | Flood Catch Rate (Recall): 4.63% | Val NSE: 0.5734
+Epoch 40 | MSE Loss: 0.3574 | Num Acc: 30.56% | Flood Catch Rate (Recall): 5.09% | Val NSE: 0.5153
+Epoch 41 | MSE Loss: 0.3403 | Num Acc: 30.99% | Flood Catch Rate (Recall): 5.09% | Val NSE: 0.5827
+Epoch 42 | MSE Loss: 0.3563 | Num Acc: 30.05% | Flood Catch Rate (Recall): 8.33% | Val NSE: 0.5904
+Epoch 43 | MSE Loss: 0.3099 | Num Acc: 32.11% | Flood Catch Rate (Recall): 5.09% | Val NSE: 0.5564
+Epoch 44 | MSE Loss: 0.3311 | Num Acc: 31.45% | Flood Catch Rate (Recall): 10.19% | Val NSE: 0.5597
+Epoch 45 | MSE Loss: 0.3470 | Num Acc: 30.14% | Flood Catch Rate (Recall): 6.02% | Val NSE: 0.5453
+Epoch 46 | MSE Loss: 0.3312 | Num Acc: 30.96% | Flood Catch Rate (Recall): 8.33% | Val NSE: 0.5626
+Epoch 47 | MSE Loss: 0.3215 | Num Acc: 31.39% | Flood Catch Rate (Recall): 6.02% | Val NSE: 0.5845
+Epoch 48 | MSE Loss: 0.4365 | Num Acc: 27.25% | Flood Catch Rate (Recall): 6.02% | Val NSE: 0.5345
+Epoch 49 | MSE Loss: 0.3423 | Num Acc: 30.09% | Flood Catch Rate (Recall): 6.02% | Val NSE: 0.5302
+Epoch 50 | MSE Loss: 0.3169 | Num Acc: 31.35% | Flood Catch Rate (Recall): 9.26% | Val NSE: 0.5304
+Epoch 51 | MSE Loss: 0.3060 | Num Acc: 32.31% | Flood Catch Rate (Recall): 8.33% | Val NSE: 0.5322
+Epoch 52 | MSE Loss: 0.3642 | Num Acc: 30.48% | Flood Catch Rate (Recall): 4.17% | Val NSE: 0.4922
+Epoch 53 | MSE Loss: 0.3616 | Num Acc: 30.02% | Flood Catch Rate (Recall): 7.87% | Val NSE: 0.5472
+Epoch 54 | MSE Loss: 0.3094 | Num Acc: 31.93% | Flood Catch Rate (Recall): 5.56% | Val NSE: 0.5576
+Epoch 55 | MSE Loss: 0.3929 | Num Acc: 29.18% | Flood Catch Rate (Recall): 4.63% | Val NSE: 0.4725
+Epoch 56 | MSE Loss: 0.5239 | Num Acc: 22.84% | Flood Catch Rate (Recall): 5.56% | Val NSE: 0.5367
+Epoch 57 | MSE Loss: 0.4814 | Num Acc: 25.09% | Flood Catch Rate (Recall): 3.24% | Val NSE: 0.5640
+Epoch 58 | MSE Loss: 0.4318 | Num Acc: 27.13% | Flood Catch Rate (Recall): 3.70% | Val NSE: 0.5664
+Epoch 59 | MSE Loss: 0.3959 | Num Acc: 28.30% | Flood Catch Rate (Recall): 3.70% | Val NSE: 0.5794
+Epoch 60 | MSE Loss: 0.3725 | Num Acc: 29.09% | Flood Catch Rate (Recall): 3.70% | Val NSE: 0.5592
+
+Training Finished, Evaluating...
+Final Test Loss -> NSE: 0.5880, MSE: 0.6507
+Figure Saved as 'lstm_kratzert_evaluation.png'
