@@ -1,0 +1,46 @@
+Detected 12 features: ['lea_height_m', 'silver_tidal_m', 'tower_tidal_m', 'chalk_bridge_sluice_rain_mm', 'deptford_rain_mm', 'hornsey_rain_mm', 'wanstead_rain_mm', 'sheerness_tidal_m', 'hour_sin', 'hour_cos', 'moon_phase', 'internal_water_m']
+Data balance mode activated. Device: cuda
+Epoch 01 | Train Loss: 0.4221 | Val Loss: 0.2736 | Num Acc: 37.37% | Flood Catch Rate (Recall): 42.63%
+Epoch 02 | Train Loss: 0.2573 | Val Loss: 0.3125 | Num Acc: 45.01% | Flood Catch Rate (Recall): 52.87%
+Epoch 03 | Train Loss: 0.1944 | Val Loss: 0.2155 | Num Acc: 50.45% | Flood Catch Rate (Recall): 56.92%
+Epoch 04 | Train Loss: 0.1624 | Val Loss: 0.2423 | Num Acc: 53.67% | Flood Catch Rate (Recall): 59.51%
+Epoch 05 | Train Loss: 0.1388 | Val Loss: 0.2372 | Num Acc: 56.90% | Flood Catch Rate (Recall): 61.27%
+Epoch 06 | Train Loss: 0.1209 | Val Loss: 0.2403 | Num Acc: 59.85% | Flood Catch Rate (Recall): 62.74%
+Epoch 07 | Train Loss: 0.1090 | Val Loss: 0.2204 | Num Acc: 62.38% | Flood Catch Rate (Recall): 63.91%
+Epoch 08 | Train Loss: 0.1002 | Val Loss: 0.2608 | Num Acc: 64.38% | Flood Catch Rate (Recall): 64.85%
+Epoch 09 | Train Loss: 0.0950 | Val Loss: 0.2233 | Num Acc: 65.56% | Flood Catch Rate (Recall): 65.34%
+Epoch 10 | Train Loss: 0.0924 | Val Loss: 0.2348 | Num Acc: 66.47% | Flood Catch Rate (Recall): 66.06%
+Epoch 11 | Train Loss: 0.1472 | Val Loss: 0.1892 | Num Acc: 55.28% | Flood Catch Rate (Recall): 60.28%
+Epoch 12 | Train Loss: 0.1172 | Val Loss: 0.1433 | Num Acc: 59.92% | Flood Catch Rate (Recall): 62.56%
+Epoch 13 | Train Loss: 0.1033 | Val Loss: 0.1690 | Num Acc: 62.63% | Flood Catch Rate (Recall): 63.76%
+Epoch 14 | Train Loss: 0.0974 | Val Loss: 0.2028 | Num Acc: 64.18% | Flood Catch Rate (Recall): 64.29%
+Epoch 15 | Train Loss: 0.0946 | Val Loss: 0.1934 | Num Acc: 64.92% | Flood Catch Rate (Recall): 64.96%
+Epoch 16 | Train Loss: 0.0867 | Val Loss: 0.2265 | Num Acc: 67.03% | Flood Catch Rate (Recall): 65.71%
+Epoch 17 | Train Loss: 0.0837 | Val Loss: 0.1864 | Num Acc: 68.05% | Flood Catch Rate (Recall): 66.42%
+Epoch 18 | Train Loss: 0.0786 | Val Loss: 0.2046 | Num Acc: 69.46% | Flood Catch Rate (Recall): 67.01%
+Epoch 19 | Train Loss: 0.0769 | Val Loss: 0.2140 | Num Acc: 70.20% | Flood Catch Rate (Recall): 67.39%
+Epoch 20 | Train Loss: 0.0758 | Val Loss: 0.2273 | Num Acc: 70.52% | Flood Catch Rate (Recall): 67.79%
+Epoch 21 | Train Loss: 0.1155 | Val Loss: 0.1987 | Num Acc: 60.67% | Flood Catch Rate (Recall): 62.69%
+Epoch 22 | Train Loss: 0.0909 | Val Loss: 0.2171 | Num Acc: 65.46% | Flood Catch Rate (Recall): 64.63%
+Epoch 23 | Train Loss: 0.0878 | Val Loss: 0.1879 | Num Acc: 66.36% | Flood Catch Rate (Recall): 65.24%
+Epoch 24 | Train Loss: 0.0850 | Val Loss: 0.1382 | Num Acc: 67.17% | Flood Catch Rate (Recall): 65.62%
+Epoch 25 | Train Loss: 0.0805 | Val Loss: 0.1620 | Num Acc: 68.40% | Flood Catch Rate (Recall): 66.09%
+Epoch 26 | Train Loss: 0.0772 | Val Loss: 0.1802 | Num Acc: 69.79% | Flood Catch Rate (Recall): 66.85%
+Epoch 27 | Train Loss: 0.0756 | Val Loss: 0.1657 | Num Acc: 70.42% | Flood Catch Rate (Recall): 67.19%
+Epoch 28 | Train Loss: 0.0723 | Val Loss: 0.1724 | Num Acc: 71.48% | Flood Catch Rate (Recall): 68.04%
+Epoch 29 | Train Loss: 0.0706 | Val Loss: 0.1883 | Num Acc: 72.10% | Flood Catch Rate (Recall): 68.18%
+Epoch 30 | Train Loss: 0.0695 | Val Loss: 0.1818 | Num Acc: 72.50% | Flood Catch Rate (Recall): 68.31%
+Epoch 31 | Train Loss: 0.0986 | Val Loss: 0.1592 | Num Acc: 64.26% | Flood Catch Rate (Recall): 64.47%
+Epoch 32 | Train Loss: 0.0819 | Val Loss: 0.1556 | Num Acc: 67.91% | Flood Catch Rate (Recall): 65.82%
+Epoch 33 | Train Loss: 0.0832 | Val Loss: 0.1665 | Num Acc: 67.45% | Flood Catch Rate (Recall): 65.83%
+Epoch 34 | Train Loss: 0.0774 | Val Loss: 0.1751 | Num Acc: 69.33% | Flood Catch Rate (Recall): 66.21%
+Epoch 35 | Train Loss: 0.0759 | Val Loss: 0.1564 | Num Acc: 69.94% | Flood Catch Rate (Recall): 66.83%
+Epoch 36 | Train Loss: 0.0733 | Val Loss: 0.1472 | Num Acc: 70.78% | Flood Catch Rate (Recall): 67.47%
+Epoch 37 | Train Loss: 0.0705 | Val Loss: 0.1474 | Num Acc: 71.83% | Flood Catch Rate (Recall): 67.86%
+Epoch 38 | Train Loss: 0.0690 | Val Loss: 0.1555 | Num Acc: 72.43% | Flood Catch Rate (Recall): 68.29%
+Epoch 39 | Train Loss: 0.0672 | Val Loss: 0.1508 | Num Acc: 73.12% | Flood Catch Rate (Recall): 68.77%
+Early stopping triggered at Epoch 39! Best Val Loss: 0.1382
+Training complete!!!!!!! Performing evaluation on verification dataset...
+Loaded best model weights for final evaluation.
+Final NSE: 0.9217
+Identified 3 major flood events in validation set. Plot saved as: lstm_balanced_evaluation.png

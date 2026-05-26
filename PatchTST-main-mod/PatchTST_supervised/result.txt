@@ -1,0 +1,9 @@
+HouseMill_336_96_PatchTST_custom_ftMS_sl336_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.11630059778690338, mae:0.21348631381988525, rse:0.34546831250190735
+
+HouseMill_336_96_PatchTST_custom_ftMS_sl336_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.11630059778690338, mae:0.21348631381988525, rse:0.34546831250190735
+
+HouseMill_336_96_PatchTST_custom_ftMS_sl336_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.16420456767082214, mae:0.28493866324424744, rse:0.41049686074256897
+

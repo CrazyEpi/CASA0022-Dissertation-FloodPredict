@@ -6,14 +6,16 @@ from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+from scipy.signal import find_peaks
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from datetime import datetime
 
+
 # ------ Configs ------
 
 class Config:
-    CSV_PATH = 'C:\\UCL\\Dissertation\\data\\data.csv'
+    CSV_PATH = 'C:\\UCL\\Dissertation\\data\\house_mill_integrated_dataset.csv'
     LOOKBACK = 336
     HORIZON = 96
     HIDDEN_DIM = 256
@@ -23,6 +25,7 @@ class Config:
     WEIGHT_DECAY = 1e-4
     BATCH_SIZE = 64
     EPOCHS = 50
+    PATIENCE = 15
     FLOOD_THRESHOLD = 4.43
     LOSS_WEIGHT = 15.0
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -85,21 +88,22 @@ class LSTM(nn.Module):
 
 class LossFunction(nn.Module):
     def __init__(self, threshold, weight=15.0):
-        # Force flood samples to be penalized 15x more
         super().__init__()
         self.threshold = threshold
         self.weight = weight
-        # Huber loss
-        self.huber = nn.HuberLoss(reduction='none', delta=1.0)
+        self.mse = nn.MSELoss(reduction='none')
 
     def forward(self, pred, target):
-        loss = self.huber(pred, target)
+        base_loss = self.mse(pred, target)
 
-        # Apply heavy penalty to flood zones
+        # if water level higher than threshold, triggers punishment
         mask = (target > self.threshold).float()
-        weighted_loss = loss * (1 + mask * self.weight)
 
-        return weighted_loss.mean()
+        # punishment
+        weighted_loss = base_loss * (1 + mask * self.weight)
+
+        return torch.mean(weighted_loss)
+
 
 def calc_nse(obs, sim):
     numerator = np.sum((obs - sim) ** 2)
@@ -169,28 +173,34 @@ def run_training(csv_path):
         print(message)
         log_messages.append(message + "\n")
 
-    # Load data and simple feature engineering
+    # Load data
     df = pd.read_csv(csv_path, index_col=0, parse_dates=True).dropna()
 
-    # Adding time features (sin/cos encoding for cyclicity)
-    df['hour_sin'] = np.sin(2 * np.pi * df.index.hour / 24)
-    df['hour_cos'] = np.cos(2 * np.pi * df.index.hour / 24)
+    # Remove sonar related columns, prevent data leakage
+    cols_to_drop = [c for c in df.columns if 'sonar' in c.lower()]
+    df = df.drop(columns=cols_to_drop, errors='ignore')
 
-    features = ['hour_sin', 'hour_cos', 'lea_height_m', 'silver_tidal_m', 'tower_tidal_m', 'internal_water_m']
+    # Make sure target is last column
+    cols = [c for c in df.columns if c != 'internal_water_m'] + ['internal_water_m']
+    df = df[cols]
+    features = list(df.columns)
+
+    log_print(f"Detected {len(features)} features: {features}")
 
     scaler = StandardScaler()
-    data_scaled = scaler.fit_transform(df[features].values)
+    data_scaled = scaler.fit_transform(df.values)
 
-    # Floof line 4.43m
+    # Calculate flood threshold after standardization
     dummy = np.zeros((1, len(features)))
     dummy[0, -1] = Config.FLOOD_THRESHOLD
     threshold_scaled = scaler.transform(dummy)[0, -1]
 
-    # Split dataset (80% train, 20% val)
+    # Split dataset
     split = int(len(data_scaled) * 0.8)
-    full_dataset = FloodDataset(data_scaled[:split], lookback=Config.LOOKBACK, horizon=Config.HORIZON, threshold_scaled=threshold_scaled)
+    full_dataset = FloodDataset(data_scaled[:split], lookback=Config.LOOKBACK, horizon=Config.HORIZON,
+                                threshold_scaled=threshold_scaled)
 
-    # Balanced sampler will force model to focus on flooded events
+    # Sampler
     class_sample_count = np.array([len(np.where(full_dataset.has_flood == t)[0]) for t in [0, 1]])
     weight = 1. / class_sample_count
     samples_weight = np.array([weight[t] for t in full_dataset.has_flood])
@@ -198,25 +208,58 @@ def run_training(csv_path):
     sampler = WeightedRandomSampler(torch.DoubleTensor(samples_weight), len(samples_weight))
 
     train_loader = DataLoader(full_dataset, batch_size=Config.BATCH_SIZE, sampler=sampler)
-    val_loader = DataLoader(FloodDataset(data_scaled[split:], lookback=Config.LOOKBACK, horizon=Config.HORIZON, threshold_scaled=threshold_scaled), batch_size=Config.BATCH_SIZE)
+    val_loader = DataLoader(FloodDataset(data_scaled[split:], lookback=Config.LOOKBACK, horizon=Config.HORIZON,
+                                         threshold_scaled=threshold_scaled), batch_size=Config.BATCH_SIZE)
 
-    model = LSTM(input_dim=len(features), hidden_dim=Config.HIDDEN_DIM, num_layers=Config.NUM_LAYERS, output_dim=Config.HORIZON, dropout=Config.DROPOUT)
+    model = LSTM(input_dim=len(features), hidden_dim=Config.HIDDEN_DIM, num_layers=Config.NUM_LAYERS,
+                 output_dim=Config.HORIZON, dropout=Config.DROPOUT)
     device = Config.DEVICE
     trainer = Trainer(model, device, threshold_scaled)
 
     log_print(f"Data balance mode activated. Device: {device}")
+
+    best_val_loss = float('inf')
+    patience_counter = 0
+    best_model_path = 'best_lstm_model.pth'
 
     # Training loop
     for epoch in range(Config.EPOCHS):
         t_loss, t_num_acc, t_recall = trainer.train_step(train_loader)
         trainer.scheduler.step()
 
+        # [新增] 在验证集上计算 Validation Loss 用于早停判断
+        model.eval()
+        val_loss = 0.0
+        with torch.no_grad():
+            for x_val, y_val in val_loader:
+                x_val, y_val = x_val.to(device), y_val.to(device)
+                preds = model(x_val)
+                loss = trainer.criterion(preds, y_val)
+                val_loss += loss.item()
+        val_loss /= len(val_loader)
+
         log_print(
-            f"Epoch {epoch + 1:02d} | Loss: {t_loss:.4f} | Num Acc: {t_num_acc:.2%} | Flood Catch Rate (Recall): {t_recall:.2%}"
+            f"Epoch {epoch + 1:02d} | Train Loss: {t_loss:.4f} | Val Loss: {val_loss:.4f} | Num Acc: {t_num_acc:.2%} | Flood Catch Rate (Recall): {t_recall:.2%}"
         )
 
-    # ------ Validation Set Evaluation & Plotting ------
+        # Early stop
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            patience_counter = 0
+            torch.save(model.state_dict(), best_model_path)
+        else:
+            patience_counter += 1
+            if patience_counter >= Config.PATIENCE:
+                log_print(f"Early stopping triggered at Epoch {epoch + 1}! Best Val Loss: {best_val_loss:.4f}")
+                break
+
+    # Validation Set Evaluation
     log_print(f"Training complete!!!!!!! Performing evaluation on verification dataset...")
+
+    if os.path.exists(best_model_path):
+        model.load_state_dict(torch.load(best_model_path))
+        log_print("Loaded best model weights for final evaluation.")
+
     model.eval()
     val_preds, val_obs = [], []
 
@@ -227,43 +270,80 @@ def run_training(csv_path):
             val_preds.append(preds)
             val_obs.append(y_val.numpy())
 
-    # Concatenate all validation steps
-    val_preds = np.concatenate(val_preds, axis=0)  # Shape: [Samples, 96]
-    val_obs = np.concatenate(val_obs, axis=0)  # Shape: [Samples, 96]
+    val_preds = np.concatenate(val_preds, axis=0)
+    val_obs = np.concatenate(val_obs, axis=0)
 
-    # For continuous chronological plotting, extract the 1-step-ahead (15 min) prediction profile [:, 0]
     preds_continuous = val_preds[:, 0].reshape(-1, 1)
     obs_continuous = val_obs[:, 0].reshape(-1, 1)
 
-    # Map back to real physical metrics (meters)
+    # Inverse transform
     preds_real = \
-    scaler.inverse_transform(np.hstack([np.zeros((preds_continuous.shape[0], len(features) - 1)), preds_continuous]))[
-        :, -1]
+        scaler.inverse_transform(
+            np.hstack([np.zeros((preds_continuous.shape[0], len(features) - 1)), preds_continuous]))[
+            :, -1]
     obs_real = \
-    scaler.inverse_transform(np.hstack([np.zeros((obs_continuous.shape[0], len(features) - 1)), obs_continuous]))[:, -1]
+        scaler.inverse_transform(np.hstack([np.zeros((obs_continuous.shape[0], len(features) - 1)), obs_continuous]))[
+            :, -1]
 
-    # Calculate Hydrological Metrics on Real Scale
     nse_score = calc_nse(obs_real, preds_real)
     log_print(f"Final NSE: {nse_score:.4f}")
 
-    # Generate Evaluation Hydrograph Plot
-    plt.figure(figsize=(20, 6))
-    plot_len = min(3000, len(obs_real))  # Plot up to 3000 steps for clear visualization
-    plt.plot(obs_real[:plot_len], label='Observation (Actual Water Level)', color='blue', alpha=0.7)
-    plt.plot(preds_real[:plot_len], label='LSTM 1-Step-Ahead Prediction', color='red', alpha=0.8, linestyle='--')
-    plt.axhline(y=4.43, color='black', linestyle=':', label='Floor Level (4.43m)')
+    # Generate Plots
+    # Get timeline
+    val_time_index = df.index[split + Config.LOOKBACK: split + Config.LOOKBACK + len(obs_real)]
 
-    plt.title(f'House Mill Validation Evaluation | NSE: {nse_score:.4f}')
-    plt.xlabel('Timeline Steps (15-minute intervals)')
-    plt.ylabel('Water Level Height (m)')
-    plt.legend(loc='upper right')
-    plt.tight_layout()
+    # Find sole flood peaks
+    peaks, properties = find_peaks(obs_real, height=Config.FLOOD_THRESHOLD, distance=96)
 
     plot_filename = 'lstm_balanced_evaluation.png'
-    plt.savefig(plot_filename, dpi=300)
-    log_print(f"Plot visualization saved as: {plot_filename}")
 
-    # ------ Save System Runtime Log ------
+    if len(peaks) > 0:
+        # get top 3 peaks
+        peak_heights = obs_real[peaks]
+        top_peaks = peaks[np.argsort(peak_heights)[-3:]][::-1]
+
+        fig, axes = plt.subplots(len(top_peaks), 1, figsize=(18, 6 * len(top_peaks)), sharex=False)
+        if len(top_peaks) == 1:
+            axes = [axes]
+
+        for i, peak_idx in enumerate(top_peaks):
+            # before / after flood 96 hours to visualization
+            start_idx = max(0, peak_idx - 384)
+            end_idx = min(len(obs_real), peak_idx + 384)
+
+            event_time = val_time_index[start_idx:end_idx]
+            event_obs = obs_real[start_idx:end_idx]
+            event_pred = preds_real[start_idx:end_idx]
+
+            axes[i].plot(event_time, event_obs, label='Observation (Actual Water Level)', color='blue', alpha=0.7)
+            axes[i].plot(event_time, event_pred, label='LSTM 1-Step-Ahead Prediction', color='red', alpha=0.8,
+                         linestyle='--')
+            axes[i].axhline(y=Config.FLOOD_THRESHOLD, color='black', linestyle=':', label='Floor Level (4.43m)')
+
+            peak_time_str = val_time_index[peak_idx].strftime('%Y-%m-%d %H:%M')
+            axes[i].set_title(f'Targeted Flood Event {i + 1} | Peak Time: {peak_time_str} | NSE: {nse_score:.3f}',
+                              fontsize=14)
+            axes[i].set_ylabel('Water Level Height (m)')
+            axes[i].legend(loc='upper right')
+
+        plt.tight_layout()
+        plt.savefig(plot_filename, dpi=300)
+        log_print(f"Identified {len(top_peaks)} major flood events in validation set. Plot saved as: {plot_filename}")
+
+    else:
+        # if there's no flood
+        log_print("No flood peaks above 4.43m found in validation set. Plotting continuous timeline instead.")
+        plt.figure(figsize=(20, 6))
+        plot_len = min(3000, len(obs_real))
+        plt.plot(val_time_index[:plot_len], obs_real[:plot_len], label='Observation', color='blue', alpha=0.7)
+        plt.plot(val_time_index[:plot_len], preds_real[:plot_len], label='Prediction', color='red', linestyle='--')
+        plt.axhline(y=Config.FLOOD_THRESHOLD, color='black', linestyle=':', label='Floor Level (4.43m)')
+        plt.title(f'House Mill Validation Evaluation (No Floods Detected) | NSE: {nse_score:.4f}')
+        plt.legend(loc='upper right')
+        plt.tight_layout()
+        plt.savefig(plot_filename, dpi=300)
+
+    # Save Logs
     os.makedirs('logs', exist_ok=True)
     log_filename = f"logs/lstm_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
     with open(log_filename, 'w', encoding='utf-8') as f:
