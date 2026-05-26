@@ -7,6 +7,7 @@ from utils.metrics import metric
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch import optim
 from torch.optim import lr_scheduler 
 
@@ -20,17 +21,22 @@ import numpy as np
 warnings.filterwarnings('ignore')
 
 class AsymmetricFloodLoss(nn.Module):
-    def __init__(self, z_threshold=1.5, weight=15.0):
+    def __init__(self, delta=1.0, peak_penalty=2.0):
         super().__init__()
-        self.mse = nn.MSELoss(reduction='none')
-        self.z_threshold = z_threshold # 1.5 in Z-score represents top ~6% extreme values
-        self.weight = weight
+        # Huber Loss (Smooth L1 Loss) to make the model conservative
+        self.huber = nn.HuberLoss(reduction='none', delta=delta)
+
+        self.peak_penalty = peak_penalty
 
     def forward(self, pred, true):
-        base_loss = self.mse(pred, true)
-        # Apply heavy penalty to normalized values representing flood peaks
-        penalty = (true > self.z_threshold).float() * self.weight
-        weighted_loss = base_loss * (1 + penalty)
+        base_loss = self.huber(pred, true)
+
+        # Exponentially scale up penalties for flood peaks.
+        # F.relu isolates peaks (Z-score > 0) to maintain baseline stability,
+        # while torch.exp drives aggressive gradient updates for extreme water levels.
+        severity_weights = torch.exp(self.peak_penalty * F.relu(true))
+
+        weighted_loss = base_loss * severity_weights
         return torch.mean(weighted_loss)
 
 class Exp_Main(Exp_Basic):
@@ -363,6 +369,95 @@ class Exp_Main(Exp_Basic):
         np.save(folder_path + 'pred.npy', preds)
         # np.save(folder_path + 'true.npy', trues)
         # np.save(folder_path + 'x.npy', inputx)
+
+        # Plots
+        try:
+            import matplotlib.pyplot as plt
+            from scipy.signal import find_peaks
+            import pandas as pd
+            from datetime import datetime
+
+            print("[SYSTEM] Generating Flood Event Targeted Plots for PatchTST...")
+
+            preds_1step = preds[:, 0, -1]
+            obs_1step = trues[:, 0, -1]
+
+            scaler = test_data.scaler
+            mean = scaler.mean_[-1]  # water level mean
+            scale = scaler.scale_[-1]  # water level Standard Deviation
+
+            preds_real = (preds_1step * scale) + mean
+            obs_real = (obs_1step * scale) + mean
+
+            # restore timeline
+            csv_path = os.path.join(self.args.root_path, self.args.data_path)
+            df_raw = pd.read_csv(csv_path)
+            time_col = 'date' if 'date' in df_raw.columns else df_raw.columns[0]
+            full_time_index = pd.to_datetime(df_raw[time_col].values)
+
+            val_time_index = full_time_index[-len(obs_real):]
+
+            FLOOD_THRESHOLD = 4.43
+
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            plot_filename = os.path.join(folder_path, f'patchtst_balanced_evaluation_{timestamp}.png')
+
+            # get peaks
+            peaks, properties = find_peaks(obs_real, height=FLOOD_THRESHOLD, distance=96)
+
+            if len(peaks) > 0:
+                peak_heights = obs_real[peaks]
+                top_peaks = peaks[np.argsort(peak_heights)[-3:]][::-1]
+
+                fig, axes = plt.subplots(len(top_peaks), 1, figsize=(18, 6 * len(top_peaks)), sharex=False)
+                if len(top_peaks) == 1:
+                    axes = [axes]
+
+                for i, peak_idx in enumerate(top_peaks):
+                    start_window = max(0, peak_idx - 384)  # 前 96 小时
+                    end_window = min(len(obs_real), peak_idx + 384)  # 后 96 小时
+
+                    event_time = val_time_index[start_window:end_window]
+                    event_obs = obs_real[start_window:end_window]
+                    event_pred = preds_real[start_window:end_window]
+
+                    axes[i].plot(event_time, event_obs, label='Observation (Actual Water Level)', color='blue',
+                                 alpha=0.7)
+                    axes[i].plot(event_time, event_pred, label='PatchTST 1-Step Prediction', color='red', alpha=0.8,
+                                 linestyle='--')
+                    axes[i].axhline(y=FLOOD_THRESHOLD, color='black', linestyle=':', label='Floor Level (4.43m)')
+
+                    peak_time_str = event_time.values[peak_idx - start_window]
+                    if isinstance(peak_time_str, np.datetime64):
+                        peak_time_str = pd.Timestamp(peak_time_str).strftime('%Y-%m-%d %H:%M')
+                    else:
+                        peak_time_str = str(peak_time_str)
+
+                    axes[i].set_title(
+                        f'Targeted Flood Event {i + 1} | Peak Time: {peak_time_str}',
+                        fontsize=14)
+                    axes[i].set_ylabel('Water Level Height (m)')
+                    axes[i].legend(loc='upper right')
+
+                plt.tight_layout()
+                plt.savefig(plot_filename, dpi=300)
+                print(f"[SYSTEM] Identified {len(top_peaks)} major flood events. Plot saved as: {plot_filename}")
+            else:
+                print("[SYSTEM] No floods > 4.43m found. Plotting continuous timeline.")
+                plt.figure(figsize=(20, 6))
+                plot_len = min(3000, len(obs_real))
+                plt.plot(val_time_index[:plot_len], obs_real[:plot_len], label='Observation', color='blue', alpha=0.7)
+                plt.plot(val_time_index[:plot_len], preds_real[:plot_len], label='PatchTST Prediction', color='red',
+                         linestyle='--')
+                plt.axhline(y=FLOOD_THRESHOLD, color='black', linestyle=':', label='Floor Level (4.43m)')
+                plt.title(f'PatchTST Test Evaluation (No Floods Detected)')
+                plt.legend(loc='upper right')
+                plt.tight_layout()
+                plt.savefig(plot_filename, dpi=300)
+
+        except Exception as e:
+            print(f"[WARNING !!!!!!!!!!!!] Failed to generate flood evaluation plot: {e}")
+
         return
 
     def predict(self, setting, load=False):

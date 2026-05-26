@@ -1,0 +1,36 @@
+Command executed: python -u run_longExp.py --is_training 1 --root_path ./dataset/housemill/ --data_path data.csv --model_id HouseMill_336_96 --model PatchTST --data custom --features MS --target internal_water_m --freq min --seq_len 672 --label_len 96 --pred_len 96 --enc_in 26 --e_layers 2 --n_heads 4 --d_model 32 --d_ff 128 --dropout 0.2 --fc_dropout 0.2 --head_dropout 0.0 --patch_len 16 --stride 8 --des Exp --train_epochs 50 --patience 10 --itr 1 --batch_size 128 --learning_rate 0.0001
+
+Traceback (most recent call last):
+  File "C:\UCL\Dissertation\PatchTST-main-mod\PatchTST_supervised\run_longExp.py", line 4, in <module>
+    from exp.exp_main import Exp_Main
+  File "C:\UCL\Dissertation\PatchTST-main-mod\PatchTST_supervised\exp\exp_main.py", line 1, in <module>
+    from data_provider.data_factory import data_provider
+  File "C:\UCL\Dissertation\PatchTST-main-mod\PatchTST_supervised\data_provider\data_factory.py", line 1, in <module>
+    from data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred
+  File "C:\UCL\Dissertation\PatchTST-main-mod\PatchTST_supervised\data_provider\data_loader.py", line 7, in <module>
+    from sklearn.preprocessing import StandardScaler
+  File "E:\Anaconda\envs\patchtst\lib\site-packages\sklearn\__init__.py", line 73, in <module>
+    from .base import clone  # noqa: E402
+  File "E:\Anaconda\envs\patchtst\lib\site-packages\sklearn\base.py", line 19, in <module>
+    from .utils._metadata_requests import _MetadataRequester, _routing_enabled
+  File "E:\Anaconda\envs\patchtst\lib\site-packages\sklearn\utils\__init__.py", line 9, in <module>
+    from ._chunking import gen_batches, gen_even_slices
+  File "E:\Anaconda\envs\patchtst\lib\site-packages\sklearn\utils\_chunking.py", line 11, in <module>
+    from ._param_validation import Interval, validate_params
+  File "E:\Anaconda\envs\patchtst\lib\site-packages\sklearn\utils\_param_validation.py", line 14, in <module>
+    from scipy.sparse import csr_matrix, issparse
+  File "E:\Anaconda\envs\patchtst\lib\site-packages\scipy\sparse\__init__.py", line 315, in <module>
+    from . import csgraph
+  File "E:\Anaconda\envs\patchtst\lib\site-packages\scipy\sparse\csgraph\__init__.py", line 187, in <module>
+    from ._laplacian import laplacian
+  File "E:\Anaconda\envs\patchtst\lib\site-packages\scipy\sparse\csgraph\_laplacian.py", line 7, in <module>
+    from scipy.sparse.linalg import LinearOperator
+  File "E:\Anaconda\envs\patchtst\lib\site-packages\scipy\sparse\linalg\__init__.py", line 131, in <module>
+    from ._isolve import *
+  File "E:\Anaconda\envs\patchtst\lib\site-packages\scipy\sparse\linalg\_isolve\__init__.py", line 4, in <module>
+    from .iterative import *
+  File "E:\Anaconda\envs\patchtst\lib\site-packages\scipy\sparse\linalg\_isolve\iterative.py", line 5, in <module>
+    from scipy.linalg import get_lapack_funcs
+  File "E:\Anaconda\envs\patchtst\lib\site-packages\scipy\linalg\__init__.py", line 207, in <module>
+    from ._decomp_lu import *
+  File "E:\Anaconda\envs\patchtst\lib\site-packages\scipy\linalg\_decomp_lu.py", line 12, in <module>

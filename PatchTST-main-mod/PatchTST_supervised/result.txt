@@ -7,3 +7,21 @@ mse:0.11630059778690338, mae:0.21348631381988525, rse:0.34546831250190735
 HouseMill_336_96_PatchTST_custom_ftMS_sl336_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
 mse:0.16420456767082214, mae:0.28493866324424744, rse:0.41049686074256897
 
+HouseMill_336_96_PatchTST_custom_ftMS_sl336_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.18798436224460602, mae:0.3186495006084442, rse:0.43921592831611633
+
+HouseMill_336_96_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.15790416300296783, mae:0.27317625284194946, rse:0.40254461765289307
+
+HouseMill_336_96_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.16763705015182495, mae:0.2787618339061737, rse:0.4147651493549347
+
+HouseMill_336_96_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.16763705015182495, mae:0.2787618339061737, rse:0.4147651493549347
+
+HouseMill_336_96_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.33948880434036255, mae:0.42941614985466003, rse:0.5902417898178101
+
+HouseMill_336_96_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.2967219352722168, mae:0.3985650837421417, rse:0.5518131852149963
+

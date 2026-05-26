@@ -247,6 +247,9 @@ def run_training(csv_path):
             best_val_loss = val_loss
             patience_counter = 0
             torch.save(model.state_dict(), best_model_path)
+            log_print(
+                f"Best Performance, Saving Model..."
+            )
         else:
             patience_counter += 1
             if patience_counter >= Config.PATIENCE:

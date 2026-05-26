@@ -1,0 +1,70 @@
+Command executed: python -u run_longExp.py --is_training 1 --root_path ./dataset/housemill/ --data_path data.csv --model_id HouseMill_336_96 --model PatchTST --data custom --features MS --target internal_water_m --freq min --seq_len 672 --label_len 96 --pred_len 96 --enc_in 26 --e_layers 2 --n_heads 4 --d_model 32 --d_ff 128 --dropout 0.2 --fc_dropout 0.2 --head_dropout 0.0 --patch_len 16 --stride 8 --revin 0 --des Exp --train_epochs 50 --patience 10 --itr 1 --batch_size 128 --learning_rate 0.0001
+
+Args in experiment:
+Namespace(random_seed=2021, is_training=1, model_id='HouseMill_336_96', model='PatchTST', data='custom', root_path='./dataset/housemill/', data_path='data.csv', features='MS', target='internal_water_m', freq='min', checkpoints='./checkpoints/', seq_len=672, label_len=96, pred_len=96, fc_dropout=0.2, head_dropout=0.0, patch_len=16, stride=8, padding_patch='end', revin=0, affine=0, subtract_last=0, decomposition=0, kernel_size=25, individual=0, embed_type=0, enc_in=26, dec_in=7, c_out=7, d_model=32, n_heads=4, e_layers=2, d_layers=1, d_ff=128, moving_avg=25, factor=1, distil=True, dropout=0.2, embed='timeF', activation='gelu', output_attention=False, do_predict=False, num_workers=10, itr=1, train_epochs=50, batch_size=128, patience=10, learning_rate=0.0001, des='Exp', loss='mse', lradj='type3', pct_start=0.3, use_amp=False, use_gpu=True, gpu=0, use_multi_gpu=False, devices='0,1,2,3', test_flop=False)
+Use GPU: cuda:0
+>>>>>>>start training : HouseMill_336_96_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0>>>>>>>>>>>>>>>>>>>>>>>>>>
+train 62368
+val 8926
+test 17943
+	iters: 100, epoch: 1 | loss: 8.5211449
+	Num Acc: 13.22% | Flood Catch Rate (Recall): 0.41%
+	speed: 0.4194s/iter; left time: 10170.3243s
+	iters: 200, epoch: 1 | loss: 7.2192307
+	Num Acc: 14.71% | Flood Catch Rate (Recall): 1.30%
+	speed: 0.1391s/iter; left time: 3359.7778s
+	iters: 300, epoch: 1 | loss: 4.8332639
+	Num Acc: 16.11% | Flood Catch Rate (Recall): 3.06%
+	speed: 0.1392s/iter; left time: 3347.0172s
+	iters: 400, epoch: 1 | loss: 5.0213666
+	Num Acc: 17.36% | Flood Catch Rate (Recall): 5.16%
+	speed: 0.1397s/iter; left time: 3346.7608s
+Epoch: 1 cost time: 95.62903594970703
+Epoch: 1, Steps: 487 | Train Loss: 6.9977513 Vali Loss: 2.9722114 Test Loss: 2.0826850 | Num Acc: 18.13% | Flood Catch Rate: 7.75%
+Validation loss decreased (inf --> 2.972211).  Saving model ...
+Updating learning rate to 0.0001
+	iters: 100, epoch: 2 | loss: 1.7389410
+	Num Acc: 24.61% | Flood Catch Rate (Recall): 49.36%
+	speed: 1.1472s/iter; left time: 27262.5491s
+	iters: 200, epoch: 2 | loss: 2.1916766
+	Num Acc: 26.39% | Flood Catch Rate (Recall): 56.31%
+	speed: 0.1536s/iter; left time: 3633.7562s
+	iters: 300, epoch: 2 | loss: 2.0292597
+	Num Acc: 26.44% | Flood Catch Rate (Recall): 59.80%
+	speed: 0.1486s/iter; left time: 3501.6966s
+	iters: 400, epoch: 2 | loss: 1.7299919
+	Num Acc: 25.60% | Flood Catch Rate (Recall): 62.16%
+	speed: 0.1471s/iter; left time: 3452.1625s
+Epoch: 2 cost time: 98.6346607208252
+Epoch: 2, Steps: 487 | Train Loss: 1.9838621 Vali Loss: 1.2722592 Test Loss: 0.8556342 | Num Acc: 24.87% | Flood Catch Rate: 63.98%
+Validation loss decreased (2.972211 --> 1.272259).  Saving model ...
+Updating learning rate to 0.0001
+	iters: 100, epoch: 3 | loss: 1.5441513
+	Num Acc: 21.39% | Flood Catch Rate (Recall): 73.31%
+	speed: 1.2061s/iter; left time: 28073.3251s
+	iters: 200, epoch: 3 | loss: 1.4533386
+	Num Acc: 21.41% | Flood Catch Rate (Recall): 74.04%
+	speed: 0.1476s/iter; left time: 3420.1888s
+	iters: 300, epoch: 3 | loss: 1.4378066
+	Num Acc: 21.55% | Flood Catch Rate (Recall): 74.35%
+	speed: 0.1428s/iter; left time: 3295.1348s
+	iters: 400, epoch: 3 | loss: 1.0962873
+	Num Acc: 21.67% | Flood Catch Rate (Recall): 74.86%
+	speed: 0.1405s/iter; left time: 3227.2142s
+Epoch: 3 cost time: 96.57868838310242
+Epoch: 3, Steps: 487 | Train Loss: 1.3687260 Vali Loss: 1.1554784 Test Loss: 0.7701108 | Num Acc: 21.80% | Flood Catch Rate: 75.09%
+Validation loss decreased (1.272259 --> 1.155478).  Saving model ...
+Updating learning rate to 0.0001
+	iters: 100, epoch: 4 | loss: 1.1690364
+	Num Acc: 22.58% | Flood Catch Rate (Recall): 76.35%
+	speed: 1.1929s/iter; left time: 27185.6924s
+	iters: 200, epoch: 4 | loss: 1.2359762
+	Num Acc: 23.22% | Flood Catch Rate (Recall): 76.77%
+	speed: 0.1465s/iter; left time: 3323.9912s
+	iters: 300, epoch: 4 | loss: 1.2086588
+	Num Acc: 23.24% | Flood Catch Rate (Recall): 76.77%
+	speed: 0.1406s/iter; left time: 3176.4608s
+	iters: 400, epoch: 4 | loss: 1.2301178
+	Num Acc: 23.21% | Flood Catch Rate (Recall): 76.59%
+	speed: 0.1395s/iter; left time: 3137.5997s
+Epoch: 4 cost time: 96.61785626411438
