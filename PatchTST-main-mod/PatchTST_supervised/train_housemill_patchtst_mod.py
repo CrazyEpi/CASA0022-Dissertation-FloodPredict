@@ -66,12 +66,12 @@ cmd = [
     "--revin", "0",
 
     "--des", "Exp",
-    "--train_epochs", "50",
-    "--patience", "5",
+    "--train_epochs", "60",
+    "--patience", "8",
     "--itr", "1",
     "--batch_size", "128",
 
-    "--learning_rate", "0.0001"
+    "--learning_rate", "0.0002"
 ]
 
 # ==========================================

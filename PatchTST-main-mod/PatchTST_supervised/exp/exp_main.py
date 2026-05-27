@@ -21,22 +21,38 @@ import numpy as np
 warnings.filterwarnings('ignore')
 
 class AsymmetricFloodLoss(nn.Module):
-    def __init__(self, delta=1.0, peak_penalty=2.0):
+    def __init__(self, delta=1.0, peak_penalty=1.5, under_predict_factor=3.5, over_predict_penalty=2.5, deadzone=0.15):
         super().__init__()
-        # Huber Loss (Smooth L1 Loss) to make the model conservative
         self.huber = nn.HuberLoss(reduction='none', delta=delta)
-
         self.peak_penalty = peak_penalty
+        self.under_predict_factor = under_predict_factor
+
+        self.over_predict_penalty = over_predict_penalty
+
+        self.deadzone = deadzone
 
     def forward(self, pred, true):
+        error = pred - true
+
         base_loss = self.huber(pred, true)
 
-        # Exponentially scale up penalties for flood peaks.
-        # F.relu isolates peaks (Z-score > 0) to maintain baseline stability,
-        # while torch.exp drives aggressive gradient updates for extreme water levels.
         severity_weights = torch.exp(self.peak_penalty * F.relu(true))
 
-        weighted_loss = base_loss * severity_weights
+        under_predict_mask = (true > 1.0) & (error < 0)
+        under_penalty = under_predict_mask.float() * self.under_predict_factor
+
+        over_predict_mask = (true < 1.0) & (error > self.deadzone)
+        over_penalty = over_predict_mask.float() * self.over_predict_penalty
+
+        safe_margin_mask = (error > 0) & (error <= self.deadzone)
+        base_loss = torch.where(safe_margin_mask, base_loss * 0.2, base_loss)
+
+        low_water_mask = (true < -0.5) & (error > 0)
+        low_penalty = low_water_mask.float() * 4.0
+
+        direction_multiplier = 1.0 + under_penalty + over_penalty + low_penalty
+
+        weighted_loss = base_loss * severity_weights * direction_multiplier
         return torch.mean(weighted_loss)
 
 class Exp_Main(Exp_Basic):
@@ -161,6 +177,7 @@ class Exp_Main(Exp_Basic):
             train_correct = 0
             train_tp = 0  # True Positives
             train_ap = 0  # Actual Positives
+            train_pp = 0  # Predicted Positives
             total_train_samples = 0
 
             self.model.train()
@@ -222,15 +239,16 @@ class Exp_Main(Exp_Basic):
                     target_f = target_flat > flood_threshold_scaled
                     train_tp += (pred_f & target_f).sum().item()
                     train_ap += target_f.sum().item()
+                    train_pp += pred_f.sum().item()
                     total_train_samples += target_flat.numel()
 
                 if (i + 1) % 100 == 0:
                     rolling_acc = train_correct / total_train_samples
                     rolling_recall = train_tp / (train_ap + 1e-6)
+                    rolling_precision = train_tp / (train_pp + 1e-6)
 
                     print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
-                    print("\tNum Acc: {0:.2%} | Flood Catch Rate (Recall): {1:.2%}".format(rolling_acc,
-                                                                                           rolling_recall))
+                    print("\t Num Acc: {0:.2%} | Recall: {1:.2%} | Precision: {2:.2%}".format(rolling_acc, rolling_recall, rolling_precision))
 
                     speed = (time.time() - time_now) / iter_count
                     left_time = speed * ((self.args.train_epochs - epoch) * train_steps - i)
