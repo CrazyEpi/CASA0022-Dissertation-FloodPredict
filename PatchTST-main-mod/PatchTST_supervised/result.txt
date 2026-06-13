@@ -37,3 +37,93 @@ mse:0.18740548193454742, mae:0.2969966530799866, rse:0.43853914737701416
 HouseMill_336_96_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
 mse:0.20834913849830627, mae:0.3264581263065338, rse:0.46239492297172546
 
+HouseMill_336_96_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.19820865988731384, mae:0.29889464378356934, rse:0.4510020613670349
+
+HouseMill_336_96_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.15908782184123993, mae:0.2699096202850342, rse:0.4040505588054657
+
+HouseMill_336_96_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.3035533130168915, mae:0.40782666206359863, rse:0.5581291913986206
+
+HouseMill_336_96_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.12991341948509216, mae:0.23183104395866394, rse:0.36512723565101624
+
+HouseMill_336_96_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.17104147374629974, mae:0.2699007987976074, rse:0.418955534696579
+
+HouseMill_336_96_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.13602741062641144, mae:0.24216945469379425, rse:0.37362027168273926
+
+Ablation_Baseline (All Features)_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Baseline (All Features)_0  
+mse:0.12991341948509216, mae:0.23183104395866394, rse:0.36512723565101624
+
+Ablation_No_Rainfall_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Rainfall_0  
+mse:0.12950129806995392, mae:0.23873554170131683, rse:0.36454764008522034
+
+Ablation_No_Tide_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Tide_0  
+mse:0.13936199247837067, mae:0.24740435183048248, rse:0.37817203998565674
+
+Ablation_No_Astro_Time_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Astro_Time_0  
+mse:0.13260464370250702, mae:0.23587149381637573, rse:0.36888977885246277
+
+Ablation_No_Sonar_Dist_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Sonar_Dist_0  
+mse:0.13167065382003784, mae:0.23519308865070343, rse:0.3675883412361145
+
+Ablation_Baseline (All Features)_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Baseline (All Features)_0  
+mse:0.12991341948509216, mae:0.23183104395866394, rse:0.36512723565101624
+
+Ablation_No_Rainfall_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Rainfall_0  
+mse:0.12950129806995392, mae:0.23873554170131683, rse:0.36454764008522034
+
+Ablation_No_Tide_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Tide_0  
+mse:0.13936199247837067, mae:0.24740435183048248, rse:0.37817203998565674
+
+Ablation_Baseline (All Features)_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Baseline (All Features)_0  
+mse:0.12991341948509216, mae:0.23183104395866394, rse:0.36512723565101624
+
+Ablation_No_Rainfall_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Rainfall_0  
+mse:0.12950129806995392, mae:0.23873554170131683, rse:0.36454764008522034
+
+Ablation_No_Tide_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Tide_0  
+mse:0.13936199247837067, mae:0.24740435183048248, rse:0.37817203998565674
+
+Ablation_No_Astro_Time_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Astro_Time_0  
+mse:0.13260464370250702, mae:0.23587149381637573, rse:0.36888977885246277
+
+Ablation_Baseline (All Features)_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Baseline (All Features)_0  
+mse:0.12991341948509216, mae:0.23183104395866394, rse:0.36512723565101624
+
+Ablation_No_Rainfall_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Rainfall_0  
+mse:0.12950129806995392, mae:0.23873554170131683, rse:0.36454764008522034
+
+Ablation_No_Tide_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Tide_0  
+mse:0.13936199247837067, mae:0.24740435183048248, rse:0.37817203998565674
+
+Ablation_No_Astro_Time_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Astro_Time_0  
+mse:0.13260464370250702, mae:0.23587149381637573, rse:0.36888977885246277
+
+Ablation_No_AutoRegressive_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_AutoRegressive_0  
+mse:0.12991341948509216, mae:0.23183104395866394, rse:0.36512723565101624
+
+Ablation_Baseline (All Features)_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Baseline (All Features)_0  
+mse:0.1369324028491974, mae:0.24582165479660034, rse:0.37486109137535095
+
+Ablation_No_Rainfall_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Rainfall_0  
+mse:0.1558898687362671, mae:0.2660340666770935, rse:0.39996886253356934
+
+Ablation_No_Tide_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Tide_0  
+mse:0.13018663227558136, mae:0.22832098603248596, rse:0.3655109703540802
+
+Ablation_No_Astro_Time_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Astro_Time_0  
+mse:0.13351188600063324, mae:0.2384447604417801, rse:0.37014952301979065
+
+Ablation_No_AutoRegressive_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_AutoRegressive_0  
+mse:0.1369324028491974, mae:0.24582165479660034, rse:0.37486109137535095
+
+HouseMill_336_96_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_Exp_0  
+mse:0.1325654238462448, mae:0.23745577037334442, rse:0.3688352108001709
+
+Ablation_No_AutoRegressive_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_AutoRegressive_0  
+mse:0.1330633908510208, mae:0.2345910519361496, rse:0.36952728033065796
+

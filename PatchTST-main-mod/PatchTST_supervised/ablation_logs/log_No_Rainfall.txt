@@ -1,0 +1,319 @@
+Experiment: No_Rainfall
+Dropped Features: ['chalk_bridge_sluice_rain_mm', 'deptford_rain_mm', 'hornsey_rain_mm', 'wanstead_rain_mm', 'chalk_bridge_sluice_rain_mm_1h_sum', 'chalk_bridge_sluice_rain_mm_6h_sum', 'chalk_bridge_sluice_rain_mm_24h_sum', 'chalk_bridge_sluice_rain_mm_7d_sum', 'deptford_rain_mm_1h_sum', 'deptford_rain_mm_6h_sum', 'deptford_rain_mm_24h_sum', 'deptford_rain_mm_7d_sum', 'hornsey_rain_mm_1h_sum', 'hornsey_rain_mm_6h_sum', 'hornsey_rain_mm_24h_sum', 'hornsey_rain_mm_7d_sum', 'wanstead_rain_mm_1h_sum', 'wanstead_rain_mm_6h_sum', 'wanstead_rain_mm_24h_sum', 'wanstead_rain_mm_7d_sum']
+
+Args in experiment:
+Namespace(random_seed=2021, is_training=1, model_id='Ablation_No_Rainfall', model='PatchTST', data='custom', root_path='./dataset/housemill/', data_path='data.csv', features='MS', target='internal_water_m', freq='min', checkpoints='./checkpoints/', seq_len=672, label_len=96, pred_len=96, fc_dropout=0.2, head_dropout=0.0, patch_len=16, stride=8, padding_patch='end', revin=0, affine=0, subtract_last=0, decomposition=0, kernel_size=25, individual=0, embed_type=0, enc_in=14, dec_in=7, c_out=7, d_model=32, n_heads=4, e_layers=2, d_layers=1, d_ff=128, moving_avg=25, factor=1, distil=True, dropout=0.2, embed='timeF', activation='gelu', output_attention=False, do_predict=False, num_workers=10, itr=1, train_epochs=60, batch_size=128, patience=8, learning_rate=0.0002, des='No_Rainfall', loss='mse', lradj='type3', pct_start=0.3, use_amp=False, use_gpu=True, gpu=0, use_multi_gpu=False, devices='0,1,2,3', test_flop=False)
+Use GPU: cuda:0
+>>>>>>>start training : Ablation_No_Rainfall_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Rainfall_0>>>>>>>>>>>>>>>>>>>>>>>>>>
+train 62368
+val 8926
+test 17943
+	iters: 100, epoch: 1 | loss: 5.6321850
+	 Num Acc: 15.21% | Recall: 4.52% | Precision: 28.04%
+	speed: 0.3245s/iter; left time: 9450.0328s
+	iters: 200, epoch: 1 | loss: 4.3761358
+	 Num Acc: 17.08% | Recall: 12.67% | Precision: 35.73%
+	speed: 0.0746s/iter; left time: 2163.9971s
+	iters: 300, epoch: 1 | loss: 3.4341922
+	 Num Acc: 17.84% | Recall: 20.03% | Precision: 37.78%
+	speed: 0.0731s/iter; left time: 2113.3475s
+	iters: 400, epoch: 1 | loss: 3.1217563
+	 Num Acc: 18.43% | Recall: 25.34% | Precision: 39.42%
+	speed: 0.0730s/iter; left time: 2104.8610s
+Epoch: 1 cost time: 60.582836627960205
+Epoch: 1, Steps: 487 | Train Loss: 4.6532604 Vali Loss: 2.9313186 Test Loss: 2.0851440 | Num Acc: 18.90% | Recall: 28.90% | Precision: 40.57%
+Validation loss decreased (inf --> 2.931319).  Saving model ...
+Updating learning rate to 0.0002
+	iters: 100, epoch: 2 | loss: 2.1415334
+	 Num Acc: 27.47% | Recall: 64.13% | Precision: 60.30%
+	speed: 0.9340s/iter; left time: 26745.2124s
+	iters: 200, epoch: 2 | loss: 1.7963622
+	 Num Acc: 30.29% | Recall: 70.60% | Precision: 63.48%
+	speed: 0.0790s/iter; left time: 2252.8449s
+	iters: 300, epoch: 2 | loss: 1.6969583
+	 Num Acc: 31.99% | Recall: 73.63% | Precision: 65.13%
+	speed: 0.0769s/iter; left time: 2185.5299s
+	iters: 400, epoch: 2 | loss: 1.5283780
+	 Num Acc: 33.23% | Recall: 75.60% | Precision: 66.24%
+	speed: 0.0728s/iter; left time: 2062.2331s
+Epoch: 2 cost time: 61.06425404548645
+Epoch: 2, Steps: 487 | Train Loss: 1.9840781 Vali Loss: 1.5000863 Test Loss: 0.9670190 | Num Acc: 34.08% | Recall: 76.68% | Precision: 66.91%
+Validation loss decreased (2.931319 --> 1.500086).  Saving model ...
+Updating learning rate to 0.0002
+	iters: 100, epoch: 3 | loss: 1.5643749
+	 Num Acc: 38.57% | Recall: 81.65% | Precision: 70.03%
+	speed: 0.9349s/iter; left time: 26316.0021s
+	iters: 200, epoch: 3 | loss: 1.2534454
+	 Num Acc: 38.49% | Recall: 81.51% | Precision: 70.32%
+	speed: 0.0790s/iter; left time: 2216.3074s
+	iters: 300, epoch: 3 | loss: 1.4500387
+	 Num Acc: 38.56% | Recall: 81.01% | Precision: 70.44%
+	speed: 0.0768s/iter; left time: 2145.8342s
+	iters: 400, epoch: 3 | loss: 1.4950663
+	 Num Acc: 38.60% | Recall: 80.66% | Precision: 70.75%
+	speed: 0.0731s/iter; left time: 2035.3024s
+Epoch: 3 cost time: 61.21458435058594
+Epoch: 3, Steps: 487 | Train Loss: 1.4675207 Vali Loss: 1.4196868 Test Loss: 0.6561991 | Num Acc: 38.67% | Recall: 80.39% | Precision: 70.92%
+Validation loss decreased (1.500086 --> 1.419687).  Saving model ...
+Updating learning rate to 0.0002
+	iters: 100, epoch: 4 | loss: 0.9507344
+	 Num Acc: 39.49% | Recall: 79.38% | Precision: 72.51%
+	speed: 0.9320s/iter; left time: 25780.0298s
+	iters: 200, epoch: 4 | loss: 1.6075777
+	 Num Acc: 39.73% | Recall: 79.69% | Precision: 72.80%
+	speed: 0.0756s/iter; left time: 2083.7056s
+	iters: 300, epoch: 4 | loss: 1.2223345
+	 Num Acc: 39.69% | Recall: 79.75% | Precision: 72.97%
+	speed: 0.0739s/iter; left time: 2028.6810s
+	iters: 400, epoch: 4 | loss: 1.2406454
+	 Num Acc: 39.77% | Recall: 79.80% | Precision: 73.06%
+	speed: 0.0735s/iter; left time: 2010.5161s
+Epoch: 4 cost time: 60.65706825256348
+Epoch: 4, Steps: 487 | Train Loss: 1.2572612 Vali Loss: 1.2812474 Test Loss: 0.5703118 | Num Acc: 39.82% | Recall: 79.90% | Precision: 73.22%
+Validation loss decreased (1.419687 --> 1.281247).  Saving model ...
+Updating learning rate to 0.00018
+	iters: 100, epoch: 5 | loss: 1.4623926
+	 Num Acc: 40.46% | Recall: 81.08% | Precision: 73.98%
+	speed: 0.9424s/iter; left time: 25608.3084s
+	iters: 200, epoch: 5 | loss: 1.4923964
+	 Num Acc: 40.67% | Recall: 81.18% | Precision: 74.28%
+	speed: 0.0791s/iter; left time: 2142.2419s
+	iters: 300, epoch: 5 | loss: 1.2915311
+	 Num Acc: 40.64% | Recall: 81.17% | Precision: 74.31%
+	speed: 0.0772s/iter; left time: 2081.6145s
+	iters: 400, epoch: 5 | loss: 1.2438619
+	 Num Acc: 40.75% | Recall: 81.20% | Precision: 74.34%
+	speed: 0.0729s/iter; left time: 1958.0424s
+Epoch: 5 cost time: 61.353249073028564
+Epoch: 5, Steps: 487 | Train Loss: 1.1667440 Vali Loss: 1.2539590 Test Loss: 0.5205333 | Num Acc: 40.87% | Recall: 81.27% | Precision: 74.35%
+Validation loss decreased (1.281247 --> 1.253959).  Saving model ...
+Updating learning rate to 0.000162
+	iters: 100, epoch: 6 | loss: 1.2163004
+	 Num Acc: 41.36% | Recall: 82.20% | Precision: 74.80%
+	speed: 0.9351s/iter; left time: 24952.8278s
+	iters: 200, epoch: 6 | loss: 0.9401791
+	 Num Acc: 41.23% | Recall: 82.13% | Precision: 74.87%
+	speed: 0.0754s/iter; left time: 2005.5113s
+	iters: 300, epoch: 6 | loss: 1.3615438
+	 Num Acc: 41.43% | Recall: 82.16% | Precision: 74.80%
+	speed: 0.0734s/iter; left time: 1945.0927s
+	iters: 400, epoch: 6 | loss: 1.2673858
+	 Num Acc: 41.49% | Recall: 82.17% | Precision: 74.85%
+	speed: 0.0731s/iter; left time: 1928.5989s
+Epoch: 6 cost time: 60.6178138256073
+Epoch: 6, Steps: 487 | Train Loss: 1.1119322 Vali Loss: 1.2103004 Test Loss: 0.4996467 | Num Acc: 41.54% | Recall: 82.13% | Precision: 74.75%
+Validation loss decreased (1.253959 --> 1.210300).  Saving model ...
+Updating learning rate to 0.00014580000000000002
+	iters: 100, epoch: 7 | loss: 1.1398580
+	 Num Acc: 42.04% | Recall: 82.63% | Precision: 75.11%
+	speed: 0.9404s/iter; left time: 24636.4301s
+	iters: 200, epoch: 7 | loss: 1.1114675
+	 Num Acc: 41.98% | Recall: 82.59% | Precision: 75.05%
+	speed: 0.0752s/iter; left time: 1961.4045s
+	iters: 300, epoch: 7 | loss: 1.3491428
+	 Num Acc: 42.01% | Recall: 82.71% | Precision: 75.17%
+	speed: 0.0734s/iter; left time: 1909.5142s
+	iters: 400, epoch: 7 | loss: 1.0565822
+	 Num Acc: 42.12% | Recall: 82.85% | Precision: 75.14%
+	speed: 0.0734s/iter; left time: 1901.9869s
+Epoch: 7 cost time: 60.702866315841675
+Epoch: 7, Steps: 487 | Train Loss: 1.0692461 Vali Loss: 1.1568710 Test Loss: 0.4778056 | Num Acc: 42.19% | Recall: 82.86% | Precision: 75.12%
+Validation loss decreased (1.210300 --> 1.156871).  Saving model ...
+Updating learning rate to 0.00013122
+	iters: 100, epoch: 8 | loss: 0.8958794
+	 Num Acc: 42.53% | Recall: 83.58% | Precision: 75.25%
+	speed: 0.9436s/iter; left time: 24262.0843s
+	iters: 200, epoch: 8 | loss: 1.2378378
+	 Num Acc: 42.63% | Recall: 83.49% | Precision: 75.25%
+	speed: 0.0793s/iter; left time: 2031.4428s
+	iters: 300, epoch: 8 | loss: 0.8691050
+	 Num Acc: 42.61% | Recall: 83.47% | Precision: 75.33%
+	speed: 0.0772s/iter; left time: 1969.6207s
+	iters: 400, epoch: 8 | loss: 1.5993166
+	 Num Acc: 42.57% | Recall: 83.49% | Precision: 75.27%
+	speed: 0.0728s/iter; left time: 1848.9320s
+Epoch: 8 cost time: 61.335529804229736
+Epoch: 8, Steps: 487 | Train Loss: 1.0356390 Vali Loss: 1.1605821 Test Loss: 0.4719366 | Num Acc: 42.53% | Recall: 83.49% | Precision: 75.27%
+EarlyStopping counter: 1 out of 8
+Updating learning rate to 0.00011809800000000002
+	iters: 100, epoch: 9 | loss: 1.2500843
+	 Num Acc: 42.31% | Recall: 83.20% | Precision: 75.28%
+	speed: 0.9295s/iter; left time: 23446.2267s
+	iters: 200, epoch: 9 | loss: 1.1797166
+	 Num Acc: 42.51% | Recall: 83.48% | Precision: 75.36%
+	speed: 0.0757s/iter; left time: 1902.2459s
+	iters: 300, epoch: 9 | loss: 1.0142980
+	 Num Acc: 42.55% | Recall: 83.64% | Precision: 75.39%
+	speed: 0.0731s/iter; left time: 1830.4980s
+	iters: 400, epoch: 9 | loss: 0.8757508
+	 Num Acc: 42.66% | Recall: 83.61% | Precision: 75.44%
+	speed: 0.0732s/iter; left time: 1824.2698s
+Epoch: 9 cost time: 60.35371017456055
+Epoch: 9, Steps: 487 | Train Loss: 1.0125529 Vali Loss: 1.1349018 Test Loss: 0.4688710 | Num Acc: 42.62% | Recall: 83.74% | Precision: 75.47%
+Validation loss decreased (1.156871 --> 1.134902).  Saving model ...
+Updating learning rate to 0.00010628820000000001
+	iters: 100, epoch: 10 | loss: 0.7336664
+	 Num Acc: 43.25% | Recall: 83.93% | Precision: 75.71%
+	speed: 0.9394s/iter; left time: 23240.0882s
+	iters: 200, epoch: 10 | loss: 0.8305519
+	 Num Acc: 43.02% | Recall: 83.90% | Precision: 75.54%
+	speed: 0.0790s/iter; left time: 1947.3539s
+	iters: 300, epoch: 10 | loss: 0.8265330
+	 Num Acc: 42.88% | Recall: 83.93% | Precision: 75.55%
+	speed: 0.0768s/iter; left time: 1885.3421s
+	iters: 400, epoch: 10 | loss: 0.9964039
+	 Num Acc: 42.84% | Recall: 84.11% | Precision: 75.63%
+	speed: 0.0723s/iter; left time: 1766.5219s
+Epoch: 10 cost time: 61.16711783409119
+Epoch: 10, Steps: 487 | Train Loss: 0.9928261 Vali Loss: 1.1557496 Test Loss: 0.4887751 | Num Acc: 42.84% | Recall: 84.12% | Precision: 75.62%
+EarlyStopping counter: 1 out of 8
+Updating learning rate to 9.565938000000003e-05
+	iters: 100, epoch: 11 | loss: 1.1284506
+	 Num Acc: 42.33% | Recall: 84.32% | Precision: 75.52%
+	speed: 0.9417s/iter; left time: 22836.3095s
+	iters: 200, epoch: 11 | loss: 0.9228511
+	 Num Acc: 42.63% | Recall: 84.23% | Precision: 75.58%
+	speed: 0.0791s/iter; left time: 1910.1664s
+	iters: 300, epoch: 11 | loss: 0.7161599
+	 Num Acc: 42.85% | Recall: 84.31% | Precision: 75.69%
+	speed: 0.0769s/iter; left time: 1849.2026s
+	iters: 400, epoch: 11 | loss: 0.7810487
+	 Num Acc: 42.71% | Recall: 84.40% | Precision: 75.64%
+	speed: 0.0724s/iter; left time: 1734.9082s
+Epoch: 11 cost time: 61.27212572097778
+Epoch: 11, Steps: 487 | Train Loss: 0.9763708 Vali Loss: 1.1017021 Test Loss: 0.4514441 | Num Acc: 42.84% | Recall: 84.38% | Precision: 75.67%
+Validation loss decreased (1.134902 --> 1.101702).  Saving model ...
+Updating learning rate to 8.609344200000003e-05
+	iters: 100, epoch: 12 | loss: 1.5180655
+	 Num Acc: 42.66% | Recall: 84.44% | Precision: 75.80%
+	speed: 0.9436s/iter; left time: 22423.5695s
+	iters: 200, epoch: 12 | loss: 0.9565309
+	 Num Acc: 42.79% | Recall: 84.53% | Precision: 75.66%
+	speed: 0.0792s/iter; left time: 1874.2132s
+	iters: 300, epoch: 12 | loss: 1.1822104
+	 Num Acc: 42.80% | Recall: 84.51% | Precision: 75.78%
+	speed: 0.0768s/iter; left time: 1810.1744s
+	iters: 400, epoch: 12 | loss: 0.7998350
+	 Num Acc: 42.84% | Recall: 84.57% | Precision: 75.77%
+	speed: 0.0729s/iter; left time: 1711.4971s
+Epoch: 12 cost time: 61.502620458602905
+Epoch: 12, Steps: 487 | Train Loss: 0.9642485 Vali Loss: 1.1287709 Test Loss: 0.4742227 | Num Acc: 42.84% | Recall: 84.57% | Precision: 75.74%
+EarlyStopping counter: 1 out of 8
+Updating learning rate to 7.748409780000002e-05
+	iters: 100, epoch: 13 | loss: 0.9604115
+	 Num Acc: 42.90% | Recall: 84.58% | Precision: 75.89%
+	speed: 0.9375s/iter; left time: 21821.2065s
+	iters: 200, epoch: 13 | loss: 0.7905004
+	 Num Acc: 42.74% | Recall: 84.75% | Precision: 75.65%
+	speed: 0.0756s/iter; left time: 1751.4338s
+	iters: 300, epoch: 13 | loss: 0.7932321
+	 Num Acc: 42.96% | Recall: 84.74% | Precision: 75.72%
+	speed: 0.0732s/iter; left time: 1689.1759s
+	iters: 400, epoch: 13 | loss: 1.3201092
+	 Num Acc: 42.98% | Recall: 84.81% | Precision: 75.75%
+	speed: 0.0731s/iter; left time: 1680.3146s
+Epoch: 13 cost time: 60.71008372306824
+Epoch: 13, Steps: 487 | Train Loss: 0.9519553 Vali Loss: 1.1355331 Test Loss: 0.4660161 | Num Acc: 42.98% | Recall: 84.79% | Precision: 75.74%
+EarlyStopping counter: 2 out of 8
+Updating learning rate to 6.973568802000002e-05
+	iters: 100, epoch: 14 | loss: 0.7438476
+	 Num Acc: 43.05% | Recall: 85.00% | Precision: 76.18%
+	speed: 0.9419s/iter; left time: 21466.7113s
+	iters: 200, epoch: 14 | loss: 1.1107188
+	 Num Acc: 43.21% | Recall: 84.92% | Precision: 76.15%
+	speed: 0.0756s/iter; left time: 1714.7640s
+	iters: 300, epoch: 14 | loss: 0.7240835
+	 Num Acc: 43.20% | Recall: 84.94% | Precision: 75.94%
+	speed: 0.0734s/iter; left time: 1657.8708s
+	iters: 400, epoch: 14 | loss: 0.8259274
+	 Num Acc: 43.12% | Recall: 84.94% | Precision: 75.86%
+	speed: 0.0730s/iter; left time: 1642.5753s
+Epoch: 14 cost time: 60.58947682380676
+Epoch: 14, Steps: 487 | Train Loss: 0.9441013 Vali Loss: 1.1315847 Test Loss: 0.4553169 | Num Acc: 43.07% | Recall: 84.92% | Precision: 75.83%
+EarlyStopping counter: 3 out of 8
+Updating learning rate to 6.276211921800002e-05
+	iters: 100, epoch: 15 | loss: 1.1512541
+	 Num Acc: 42.73% | Recall: 84.89% | Precision: 75.75%
+	speed: 0.9456s/iter; left time: 21090.5086s
+	iters: 200, epoch: 15 | loss: 0.9531779
+	 Num Acc: 42.79% | Recall: 85.07% | Precision: 75.71%
+	speed: 0.0788s/iter; left time: 1750.4855s
+	iters: 300, epoch: 15 | loss: 0.9182007
+	 Num Acc: 42.92% | Recall: 85.12% | Precision: 75.82%
+	speed: 0.0771s/iter; left time: 1704.2967s
+	iters: 400, epoch: 15 | loss: 0.6993685
+	 Num Acc: 43.02% | Recall: 85.12% | Precision: 75.83%
+	speed: 0.0723s/iter; left time: 1590.7191s
+Epoch: 15 cost time: 61.45316243171692
+Epoch: 15, Steps: 487 | Train Loss: 0.9348303 Vali Loss: 1.1314837 Test Loss: 0.4700238 | Num Acc: 42.99% | Recall: 85.08% | Precision: 75.85%
+EarlyStopping counter: 4 out of 8
+Updating learning rate to 5.648590729620002e-05
+	iters: 100, epoch: 16 | loss: 1.2646916
+	 Num Acc: 43.16% | Recall: 85.19% | Precision: 75.54%
+	speed: 0.9379s/iter; left time: 20461.7196s
+	iters: 200, epoch: 16 | loss: 1.3631279
+	 Num Acc: 43.13% | Recall: 85.31% | Precision: 75.73%
+	speed: 0.0794s/iter; left time: 1724.8941s
+	iters: 300, epoch: 16 | loss: 1.3089706
+	 Num Acc: 43.10% | Recall: 85.20% | Precision: 75.73%
+	speed: 0.0775s/iter; left time: 1674.9605s
+	iters: 400, epoch: 16 | loss: 0.7734358
+	 Num Acc: 43.10% | Recall: 85.20% | Precision: 75.79%
+	speed: 0.0731s/iter; left time: 1572.6522s
+Epoch: 16 cost time: 61.45835733413696
+Epoch: 16, Steps: 487 | Train Loss: 0.9270917 Vali Loss: 1.1457900 Test Loss: 0.4731200 | Num Acc: 43.14% | Recall: 85.28% | Precision: 75.84%
+EarlyStopping counter: 5 out of 8
+Updating learning rate to 5.083731656658002e-05
+	iters: 100, epoch: 17 | loss: 0.8774245
+	 Num Acc: 43.60% | Recall: 85.83% | Precision: 76.21%
+	speed: 0.9419s/iter; left time: 20089.3799s
+	iters: 200, epoch: 17 | loss: 0.9581408
+	 Num Acc: 43.42% | Recall: 85.78% | Precision: 76.07%
+	speed: 0.0790s/iter; left time: 1677.9343s
+	iters: 300, epoch: 17 | loss: 1.0254362
+	 Num Acc: 43.43% | Recall: 85.49% | Precision: 75.92%
+	speed: 0.0772s/iter; left time: 1631.4221s
+	iters: 400, epoch: 17 | loss: 1.0052187
+	 Num Acc: 43.36% | Recall: 85.38% | Precision: 75.94%
+	speed: 0.0731s/iter; left time: 1537.8050s
+Epoch: 17 cost time: 61.56706929206848
+Epoch: 17, Steps: 487 | Train Loss: 0.9200330 Vali Loss: 1.1571462 Test Loss: 0.4749352 | Num Acc: 43.28% | Recall: 85.43% | Precision: 75.93%
+EarlyStopping counter: 6 out of 8
+Updating learning rate to 4.575358490992202e-05
+	iters: 100, epoch: 18 | loss: 0.6798188
+	 Num Acc: 43.23% | Recall: 85.50% | Precision: 76.56%
+	speed: 0.9312s/iter; left time: 19409.0201s
+	iters: 200, epoch: 18 | loss: 1.0308555
+	 Num Acc: 43.25% | Recall: 85.50% | Precision: 76.23%
+	speed: 0.0756s/iter; left time: 1568.1501s
+	iters: 300, epoch: 18 | loss: 0.9475029
+	 Num Acc: 43.19% | Recall: 85.46% | Precision: 76.05%
+	speed: 0.0734s/iter; left time: 1515.4540s
+	iters: 400, epoch: 18 | loss: 1.2753751
+	 Num Acc: 43.25% | Recall: 85.45% | Precision: 76.03%
+	speed: 0.0735s/iter; left time: 1508.8431s
+Epoch: 18 cost time: 60.426018953323364
+Epoch: 18, Steps: 487 | Train Loss: 0.9150483 Vali Loss: 1.1715489 Test Loss: 0.4890357 | Num Acc: 43.21% | Recall: 85.36% | Precision: 75.92%
+EarlyStopping counter: 7 out of 8
+Updating learning rate to 4.117822641892981e-05
+	iters: 100, epoch: 19 | loss: 0.9751809
+	 Num Acc: 43.50% | Recall: 85.37% | Precision: 75.86%
+	speed: 0.9379s/iter; left time: 19090.6478s
+	iters: 200, epoch: 19 | loss: 0.8081063
+	 Num Acc: 43.40% | Recall: 85.72% | Precision: 75.98%
+	speed: 0.0755s/iter; left time: 1529.3688s
+	iters: 300, epoch: 19 | loss: 0.7892413
+	 Num Acc: 43.42% | Recall: 85.68% | Precision: 75.98%
+	speed: 0.0739s/iter; left time: 1489.0870s
+	iters: 400, epoch: 19 | loss: 0.8420008
+	 Num Acc: 43.40% | Recall: 85.63% | Precision: 75.98%
+	speed: 0.0736s/iter; left time: 1475.9214s
+Epoch: 19 cost time: 60.697918176651
+Epoch: 19, Steps: 487 | Train Loss: 0.9086337 Vali Loss: 1.1338328 Test Loss: 0.4665672 | Num Acc: 43.31% | Recall: 85.58% | Precision: 75.92%
+EarlyStopping counter: 8 out of 8
+Early stopping
+>>>>>>>testing : Ablation_No_Rainfall_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Rainfall_0<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+test 17943
+mse:0.12950129806995392, mae:0.23873554170131683, rse:0.36454764008522034
+[SYSTEM] Executing Multi-Task Dual-Lock Evaluation...
+[SYSTEM] Identified 3 major flood events. Plot saved as: ./results/Ablation_No_Rainfall_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Rainfall_0/patchtst_balanced_evaluation_20260610_180750.png

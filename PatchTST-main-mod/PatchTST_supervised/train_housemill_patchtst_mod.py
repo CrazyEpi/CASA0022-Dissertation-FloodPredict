@@ -28,6 +28,11 @@ if '_time' in df.columns:
 elif 'time' in df.columns:
     df.rename(columns={'time': 'date'}, inplace=True)
 
+GLOBAL_LEAKAGE_DROP = ["sonar", "lea_height", "lea_"]
+cols_to_drop = [c for c in df.columns if any(leak in c for leak in GLOBAL_LEAKAGE_DROP)]
+if cols_to_drop:
+    df.drop(columns=cols_to_drop, inplace=True)
+
 cols = [c for c in df.columns if c != 'internal_water_m'] + ['internal_water_m']
 df = df[cols]
 df.to_csv(TARGET_CSV, index=False)

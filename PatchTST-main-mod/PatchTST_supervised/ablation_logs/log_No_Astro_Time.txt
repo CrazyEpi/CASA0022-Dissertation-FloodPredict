@@ -1,0 +1,39 @@
+Experiment: No_Astro_Time
+Dropped Features: ['hour_sin', 'hour_cos', 'year_sin', 'year_cos', 'month_sin', 'month_cos', 'moon_phase']
+
+Args in experiment:
+Namespace(random_seed=2021, is_training=1, model_id='Ablation_No_Astro_Time', model='PatchTST', data='custom', root_path='./dataset/housemill/', data_path='data.csv', features='MS', target='internal_water_m', freq='min', checkpoints='./checkpoints/', seq_len=672, label_len=96, pred_len=96, fc_dropout=0.2, head_dropout=0.0, patch_len=16, stride=8, padding_patch='end', revin=0, affine=0, subtract_last=0, decomposition=0, kernel_size=25, individual=0, embed_type=0, enc_in=27, dec_in=7, c_out=7, d_model=32, n_heads=4, e_layers=2, d_layers=1, d_ff=128, moving_avg=25, factor=1, distil=True, dropout=0.2, embed='timeF', activation='gelu', output_attention=False, do_predict=False, num_workers=10, itr=1, train_epochs=60, batch_size=128, patience=8, learning_rate=0.0002, des='No_Astro_Time', loss='mse', lradj='type3', pct_start=0.3, use_amp=False, use_gpu=True, gpu=0, use_multi_gpu=False, devices='0,1,2,3', test_flop=False)
+Use GPU: cuda:0
+>>>>>>>start training : Ablation_No_Astro_Time_PatchTST_custom_ftMS_sl672_ll96_pl96_dm32_nh4_el2_dl1_df128_fc1_ebtimeF_dtTrue_No_Astro_Time_0>>>>>>>>>>>>>>>>>>>>>>>>>>
+train 62368
+val 8926
+test 17943
+	iters: 100, epoch: 1 | loss: 5.3328457
+	 Num Acc: 15.07% | Recall: 1.63% | Precision: 32.74%
+	speed: 0.4492s/iter; left time: 13080.6582s
+	iters: 200, epoch: 1 | loss: 4.7508316
+	 Num Acc: 17.71% | Recall: 7.90% | Precision: 40.04%
+	speed: 0.1526s/iter; left time: 4429.5510s
+	iters: 300, epoch: 1 | loss: 3.6453412
+	 Num Acc: 18.81% | Recall: 17.32% | Precision: 40.97%
+	speed: 0.1428s/iter; left time: 4130.1818s
+	iters: 400, epoch: 1 | loss: 3.4791183
+	 Num Acc: 19.46% | Recall: 24.20% | Precision: 41.92%
+	speed: 0.1431s/iter; left time: 4125.2972s
+Epoch: 1 cost time: 101.14722537994385
+Epoch: 1, Steps: 487 | Train Loss: 4.7749953 Vali Loss: 2.9822479 Test Loss: 2.1312724 | Num Acc: 19.83% | Recall: 28.89% | Precision: 42.51%
+Validation loss decreased (inf --> 2.982248).  Saving model ...
+Updating learning rate to 0.0002
+	iters: 100, epoch: 2 | loss: 2.7046983
+	 Num Acc: 26.91% | Recall: 66.59% | Precision: 60.07%
+	speed: 1.2030s/iter; left time: 34446.6990s
+	iters: 200, epoch: 2 | loss: 2.4621429
+	 Num Acc: 29.37% | Recall: 70.35% | Precision: 63.27%
+	speed: 0.1474s/iter; left time: 4206.0825s
+	iters: 300, epoch: 2 | loss: 1.6358774
+	 Num Acc: 31.09% | Recall: 72.51% | Precision: 64.99%
+	speed: 0.1434s/iter; left time: 4078.4921s
+	iters: 400, epoch: 2 | loss: 1.2175910
+	 Num Acc: 32.16% | Recall: 73.57% | Precision: 66.06%
+	speed: 0.1407s/iter; left time: 3987.5770s
+Epoch: 2 cost time: 97.3074722290039

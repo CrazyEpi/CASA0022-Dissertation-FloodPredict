@@ -9,51 +9,56 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import optim
-from torch.optim import lr_scheduler 
+from torch.optim import lr_scheduler
 
 import os
 import time
-
 import warnings
 import matplotlib.pyplot as plt
-import numpy as np
+import pandas as pd
+from datetime import datetime
+from scipy.signal import find_peaks
 
 warnings.filterwarnings('ignore')
 
+
 class AsymmetricFloodLoss(nn.Module):
-    def __init__(self, delta=1.0, peak_penalty=1.5, under_predict_factor=3.5, over_predict_penalty=2.5, deadzone=0.15):
+    def __init__(self, delta=1.0, peak_penalty=1.2, under_predict_factor=2.8, over_predict_penalty=3.5, deadzone=0.15):
         super().__init__()
         self.huber = nn.HuberLoss(reduction='none', delta=delta)
+        # Reduced peak penalty to prevent gradients from exploding
         self.peak_penalty = peak_penalty
+
+        # [MODIFIED]: Lowered under-prediction to stop the model from being TOO aggressive
         self.under_predict_factor = under_predict_factor
 
+        # [MODIFIED]: Increased over-prediction penalty to punish Precision-killers
         self.over_predict_penalty = over_predict_penalty
-
         self.deadzone = deadzone
 
     def forward(self, pred, true):
         error = pred - true
-
         base_loss = self.huber(pred, true)
-
         severity_weights = torch.exp(self.peak_penalty * F.relu(true))
 
-        under_predict_mask = (true > 1.0) & (error < 0)
+        # Precision-Focused: Only penalize under-prediction when it's genuinely high-risk
+        under_predict_mask = (true > 1.2) & (error < 0)
         under_penalty = under_predict_mask.float() * self.under_predict_factor
 
+        # Precision-Focused: Aggressive penalty for high-confidence False Positives
+        # If the model predicts a flood (error > deadzone) while it's actually safe (true < 1.0)
         over_predict_mask = (true < 1.0) & (error > self.deadzone)
         over_penalty = over_predict_mask.float() * self.over_predict_penalty
 
+        # Reduce penalty for "Safe Margin" (the model is just slightly cautious)
         safe_margin_mask = (error > 0) & (error <= self.deadzone)
-        base_loss = torch.where(safe_margin_mask, base_loss * 0.2, base_loss)
+        base_loss = torch.where(safe_margin_mask, base_loss * 0.1, base_loss)
 
-        low_water_mask = (true < -0.5) & (error > 0)
-        low_penalty = low_water_mask.float() * 4.0
-
-        direction_multiplier = 1.0 + under_penalty + over_penalty + low_penalty
+        direction_multiplier = 1.0 + under_penalty + over_penalty
 
         weighted_loss = base_loss * severity_weights * direction_multiplier
         return torch.mean(weighted_loss)
+
 
 class Exp_Main(Exp_Basic):
     def __init__(self, args):
@@ -70,7 +75,6 @@ class Exp_Main(Exp_Basic):
             'PatchTST': PatchTST,
         }
         model = model_dict[self.args.model].Model(self.args).float()
-
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
         return model
@@ -84,55 +88,75 @@ class Exp_Main(Exp_Basic):
         return model_optim
 
     def _select_criterion(self):
-        # criterion = nn.MSELoss()
         criterion = AsymmetricFloodLoss()
         return criterion
 
     def vali(self, vali_data, vali_loader, criterion):
         total_loss = []
+        vali_tp = 0
+        vali_ap = 0
+        vali_pp = 0
+        vali_correct = 0
+        total_vali_samples = 0
+
+        bce_criterion = nn.BCEWithLogitsLoss()
+
+        flood_threshold_real = 4.43
+        try:
+            flood_threshold_scaled = vali_data.scaler.transform(
+                np.zeros((1, vali_data.data_x.shape[1] + 1)) + flood_threshold_real
+            )[0, -1]
+        except:
+            flood_threshold_scaled = 1.0
+
         self.model.eval()
         with torch.no_grad():
             for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
                 batch_x = batch_x.float().to(self.device)
-                batch_y = batch_y.float()
+                batch_y = batch_y.float().to(self.device)
 
-                batch_x_mark = batch_x_mark.float().to(self.device)
-                batch_y_mark = batch_y_mark.float().to(self.device)
-
-                # decoder input
-                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
-                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
-                # encoder - decoder
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
-                        if 'Linear' in self.args.model or 'TST' in self.args.model:
-                            outputs = self.model(batch_x)
-                        else:
-                            if self.args.output_attention:
-                                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                            else:
-                                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                        outputs, clf_outputs = self.model(batch_x)
                 else:
-                    if 'Linear' in self.args.model or 'TST' in self.args.model:
-                        outputs = self.model(batch_x)
-                    else:
-                        if self.args.output_attention:
-                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                        else:
-                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                    outputs, clf_outputs = self.model(batch_x)
+
                 f_dim = -1 if self.args.features == 'MS' else 0
                 outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                batch_y_reg = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                clf_outputs = clf_outputs[:, -self.args.pred_len:, :]
 
-                pred = outputs.detach().cpu()
-                true = batch_y.detach().cpu()
+                reg_loss = criterion(outputs, batch_y_reg)
+                clf_target = (batch_y_reg > flood_threshold_scaled).float()
+                clf_loss = bce_criterion(clf_outputs, clf_target)
 
-                loss = criterion(pred, true)
+                loss = reg_loss + clf_loss
+                total_loss.append(loss.item())
 
-                total_loss.append(loss)
+                preds_flat = outputs[..., -1]
+                target_flat = batch_y_reg[..., -1]
+                clf_probs = torch.sigmoid(clf_outputs[..., -1])
+
+                vali_correct += (torch.abs(preds_flat - target_flat) < 0.2).sum().item()
+                total_vali_samples += target_flat.numel()
+
+                pred_f = (preds_flat > flood_threshold_scaled) & (clf_probs > 0.35)
+                target_f = target_flat > flood_threshold_scaled
+
+                vali_tp += (pred_f & target_f).sum().item()
+                vali_ap += target_f.sum().item()
+                vali_pp += pred_f.sum().item()
+
         total_loss = np.average(total_loss)
+        vali_recall = vali_tp / (vali_ap + 1e-6)
+        vali_precision = vali_tp / (vali_pp + 1e-6)
+
+        # calculate num acc
+        vali_num_acc = vali_correct / (total_vali_samples + 1e-6)
+
         self.model.train()
-        return total_loss
+
+        return total_loss, vali_recall, vali_precision, vali_num_acc
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag='train')
@@ -144,40 +168,40 @@ class Exp_Main(Exp_Basic):
             os.makedirs(path)
 
         time_now = time.time()
-
         train_steps = len(train_loader)
         early_stopping = EarlyStopping(patience=self.args.patience, verbose=True)
 
         model_optim = self._select_optimizer()
         criterion = self._select_criterion()
+        pos_weight = torch.tensor([4.0]).to(self.device)
+        bce_criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
 
-        "house mill flood related matrix"
+        # Dynamic threshold alignment for BCE target
         flood_threshold_real = 4.43
-
         try:
             flood_threshold_scaled = train_data.scaler.transform(
                 np.zeros((1, train_data.data_x.shape[1] + 1)) + flood_threshold_real
             )[0, -1]
         except:
             flood_threshold_scaled = 1.5
-            
-        scheduler = lr_scheduler.OneCycleLR(optimizer = model_optim,
-                                            steps_per_epoch = train_steps,
-                                            pct_start = self.args.pct_start,
-                                            epochs = self.args.train_epochs,
-                                            max_lr = self.args.learning_rate)
+
+        scheduler = lr_scheduler.OneCycleLR(optimizer=model_optim,
+                                            steps_per_epoch=train_steps,
+                                            pct_start=self.args.pct_start,
+                                            epochs=self.args.train_epochs,
+                                            max_lr=self.args.learning_rate)
 
         for epoch in range(self.args.train_epochs):
             iter_count = 0
             train_loss = []
 
             train_correct = 0
-            train_tp = 0  # True Positives
-            train_ap = 0  # Actual Positives
-            train_pp = 0  # Predicted Positives
+            train_tp = 0
+            train_ap = 0
+            train_pp = 0
             total_train_samples = 0
 
             self.model.train()
@@ -186,57 +210,51 @@ class Exp_Main(Exp_Basic):
                 iter_count += 1
                 model_optim.zero_grad()
                 batch_x = batch_x.float().to(self.device)
-
                 batch_y = batch_y.float().to(self.device)
-                batch_x_mark = batch_x_mark.float().to(self.device)
-                batch_y_mark = batch_y_mark.float().to(self.device)
 
-                # decoder input
-                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
-                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
-
-                # encoder - decoder
+                # Multi-task output unpacking
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
-                        if 'Linear' in self.args.model or 'TST' in self.args.model:
-                            outputs = self.model(batch_x)
-                        else:
-                            if self.args.output_attention:
-                                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                            else:
-                                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                        outputs, clf_outputs = self.model(batch_x)
 
                         f_dim = -1 if self.args.features == 'MS' else 0
                         outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                        batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-                        loss = criterion(outputs, batch_y)
+                        batch_y_reg = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                        clf_outputs = clf_outputs[:, -self.args.pred_len:, :]
+
+                        reg_loss = criterion(outputs, batch_y_reg)
+                        clf_target = (batch_y_reg > flood_threshold_scaled).float()
+                        clf_loss = bce_criterion(clf_outputs, clf_target)
+
+                        loss = reg_loss + clf_loss
                         train_loss.append(loss.item())
                 else:
-                    if 'Linear' in self.args.model or 'TST' in self.args.model:
-                            outputs = self.model(batch_x)
-                    else:
-                        if self.args.output_attention:
-                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                            
-                        else:
-                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark, batch_y)
-                    # print(outputs.shape,batch_y.shape)
+                    outputs, clf_outputs = self.model(batch_x)
+
                     f_dim = -1 if self.args.features == 'MS' else 0
                     outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                    batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-                    loss = criterion(outputs, batch_y)
+                    batch_y_reg = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                    clf_outputs = clf_outputs[:, -self.args.pred_len:, :]
+
+                    reg_loss = criterion(outputs, batch_y_reg)
+                    clf_target = (batch_y_reg > flood_threshold_scaled).float()
+                    clf_loss = bce_criterion(clf_outputs, clf_target)
+
+                    loss = reg_loss + clf_loss
                     train_loss.append(loss.item())
 
+                # Dual-Lock mechanism evaluation
                 with torch.no_grad():
                     preds_flat = outputs[..., -1]
-                    target_flat = batch_y[..., -1]
+                    target_flat = batch_y_reg[..., -1]
+                    clf_probs = torch.sigmoid(clf_outputs[..., -1])
 
-                    "threshold = 0.2"
                     train_correct += (torch.abs(preds_flat - target_flat) < 0.2).sum().item()
 
-                    # 洪水抓取率统计
-                    pred_f = preds_flat > flood_threshold_scaled
+                    # Both constraints must be met to trigger the flood warning
+                    pred_f = (preds_flat > flood_threshold_scaled) & (clf_probs > 0.35)
                     target_f = target_flat > flood_threshold_scaled
+
                     train_tp += (pred_f & target_f).sum().item()
                     train_ap += target_f.sum().item()
                     train_pp += pred_f.sum().item()
@@ -248,7 +266,9 @@ class Exp_Main(Exp_Basic):
                     rolling_precision = train_tp / (train_pp + 1e-6)
 
                     print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
-                    print("\t Num Acc: {0:.2%} | Recall: {1:.2%} | Precision: {2:.2%}".format(rolling_acc, rolling_recall, rolling_precision))
+                    print(
+                        "\t Num Acc: {0:.2%} | Recall: {1:.2%} | Precision: {2:.2%}".format(rolling_acc, rolling_recall,
+                                                                                            rolling_precision))
 
                     speed = (time.time() - time_now) / iter_count
                     left_time = speed * ((self.args.train_epochs - epoch) * train_steps - i)
@@ -263,20 +283,28 @@ class Exp_Main(Exp_Basic):
                 else:
                     loss.backward()
                     model_optim.step()
-                    
+
                 if self.args.lradj == 'TST':
                     adjust_learning_rate(model_optim, scheduler, epoch + 1, self.args, printout=False)
                     scheduler.step()
 
             print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss = self.vali(vali_data, vali_loader, criterion)
-            test_loss = self.vali(test_data, test_loader, criterion)
 
-            t_num_acc = train_correct / total_train_samples
-            t_recall = train_tp / (train_ap + 1e-6)
+            vali_loss, vali_acc, vali_recall, vali_precision = self.vali(vali_data, vali_loader, criterion)
+            test_loss, test_acc, test_recall, test_precision = self.vali(test_data, test_loader, criterion)
 
-            print(f"Epoch: {epoch + 1}, Steps: {train_steps} | Train Loss: {train_loss:.7f} Vali Loss: {vali_loss:.7f} Test Loss: {test_loss:.7f} | Num Acc: {t_num_acc:.2%} | Flood Catch Rate: {t_recall:.2%}")
+            print(
+                f"Epoch: {epoch + 1} | Train Loss: {train_loss:.7f} | Vali Loss: {vali_loss:.7f} | Test Loss: {test_loss:.7f}")
+            print(
+                f"    --> [Validation] Acc: {vali_acc:.2%} | Recall: {vali_recall:.2%} | Precision: {vali_precision:.2%}")
+            print(f"    --> [Test] Acc: {test_acc:.2%} | Recall: {test_recall:.2%} | Precision: {test_precision:.2%}")
+
+            # F1 Score
+            if (vali_recall + vali_precision) > 0:
+                vali_f1 = 2 * (vali_precision * vali_recall) / (vali_precision + vali_recall)
+            else:
+                vali_f1 = 0.0
 
             early_stopping(vali_loss, self.model, path)
             if early_stopping.early_stop:
@@ -295,13 +323,14 @@ class Exp_Main(Exp_Basic):
 
     def test(self, setting, test=0):
         test_data, test_loader = self._get_data(flag='test')
-        
+
         if test:
             print('loading model')
             self.model.load_state_dict(torch.load(os.path.join('./checkpoints/' + setting, 'checkpoint.pth')))
 
         preds = []
         trues = []
+        clf_preds = []
         inputx = []
         folder_path = './test_results/' + setting + '/'
         if not os.path.exists(folder_path):
@@ -313,63 +342,42 @@ class Exp_Main(Exp_Basic):
                 batch_x = batch_x.float().to(self.device)
                 batch_y = batch_y.float().to(self.device)
 
-                batch_x_mark = batch_x_mark.float().to(self.device)
-                batch_y_mark = batch_y_mark.float().to(self.device)
-
-                # decoder input
-                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
-                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
-                # encoder - decoder
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
-                        if 'Linear' in self.args.model or 'TST' in self.args.model:
-                            outputs = self.model(batch_x)
-                        else:
-                            if self.args.output_attention:
-                                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                            else:
-                                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                        outputs, clf_outputs = self.model(batch_x)
                 else:
-                    if 'Linear' in self.args.model or 'TST' in self.args.model:
-                            outputs = self.model(batch_x)
-                    else:
-                        if self.args.output_attention:
-                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-
-                        else:
-                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                    outputs, clf_outputs = self.model(batch_x)
 
                 f_dim = -1 if self.args.features == 'MS' else 0
-                # print(outputs.shape,batch_y.shape)
                 outputs = outputs[:, -self.args.pred_len:, f_dim:]
                 batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                clf_outputs = clf_outputs[:, -self.args.pred_len:, :]
+
                 outputs = outputs.detach().cpu().numpy()
                 batch_y = batch_y.detach().cpu().numpy()
+                clf_probs = torch.sigmoid(clf_outputs).detach().cpu().numpy()
 
-                pred = outputs  # outputs.detach().cpu().numpy()  # .squeeze()
-                true = batch_y  # batch_y.detach().cpu().numpy()  # .squeeze()
-
-                preds.append(pred)
-                trues.append(true)
+                preds.append(outputs)
+                trues.append(batch_y)
+                clf_preds.append(clf_probs)
                 inputx.append(batch_x.detach().cpu().numpy())
+
                 if i % 20 == 0:
                     input = batch_x.detach().cpu().numpy()
-                    gt = np.concatenate((input[0, :, -1], true[0, :, -1]), axis=0)
-                    pd = np.concatenate((input[0, :, -1], pred[0, :, -1]), axis=0)
-                    visual(gt, pd, os.path.join(folder_path, str(i) + '.pdf'))
+                    gt = np.concatenate((input[0, :, -1], batch_y[0, :, -1]), axis=0)
+                    pd_arr = np.concatenate((input[0, :, -1], outputs[0, :, -1]), axis=0)
+                    visual(gt, pd_arr, os.path.join(folder_path, str(i) + '.pdf'))
 
-        if self.args.test_flop:
-            test_params_flop((batch_x.shape[1],batch_x.shape[2]))
-            exit()
         preds = np.array(preds)
         trues = np.array(trues)
+        clf_preds = np.array(clf_preds)
         inputx = np.array(inputx)
 
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
+        clf_preds = clf_preds.reshape(-1, clf_preds.shape[-2], clf_preds.shape[-1])
         inputx = inputx.reshape(-1, inputx.shape[-2], inputx.shape[-1])
 
-        # result save
         folder_path = './results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
@@ -379,35 +387,33 @@ class Exp_Main(Exp_Basic):
         f = open("result.txt", 'a')
         f.write(setting + "  \n")
         f.write('mse:{}, mae:{}, rse:{}'.format(mse, mae, rse))
-        f.write('\n')
-        f.write('\n')
+        f.write('\n\n')
         f.close()
 
-        # np.save(folder_path + 'metrics.npy', np.array([mae, mse, rmse, mape, mspe,rse, corr]))
         np.save(folder_path + 'pred.npy', preds)
-        # np.save(folder_path + 'true.npy', trues)
-        # np.save(folder_path + 'x.npy', inputx)
 
-        # Plots
+        # Plotting & Physical Constraints
         try:
-            import matplotlib.pyplot as plt
-            from scipy.signal import find_peaks
-            import pandas as pd
-            from datetime import datetime
-
-            print("[SYSTEM] Generating Flood Event Targeted Plots for PatchTST...")
+            print("[SYSTEM] Executing Multi-Task Dual-Lock Evaluation...")
 
             preds_1step = preds[:, 0, -1]
             obs_1step = trues[:, 0, -1]
+            clf_probs_1step = clf_preds[:, 0, -1]
 
             scaler = test_data.scaler
-            mean = scaler.mean_[-1]  # water level mean
-            scale = scaler.scale_[-1]  # water level Standard Deviation
+            mean = scaler.mean_[-1]
+            scale = scaler.scale_[-1]
 
             preds_real = (preds_1step * scale) + mean
             obs_real = (obs_1step * scale) + mean
 
-            # restore timeline
+            FLOOD_THRESHOLD = 4.43
+
+            # Apply Dual-Lock Gating Constraint
+            # If the classification network indicates a safe threshold (probability < 50%),
+            # aggressively flatten any phantom harmonic surges created by the regression head.
+            preds_real = np.where(clf_probs_1step < 0.5, np.minimum(preds_real, FLOOD_THRESHOLD - 0.1), preds_real)
+
             csv_path = os.path.join(self.args.root_path, self.args.data_path)
             df_raw = pd.read_csv(csv_path)
             time_col = 'date' if 'date' in df_raw.columns else df_raw.columns[0]
@@ -415,12 +421,9 @@ class Exp_Main(Exp_Basic):
 
             val_time_index = full_time_index[-len(obs_real):]
 
-            FLOOD_THRESHOLD = 4.43
-
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             plot_filename = os.path.join(folder_path, f'patchtst_balanced_evaluation_{timestamp}.png')
 
-            # get peaks
             peaks, properties = find_peaks(obs_real, height=FLOOD_THRESHOLD, distance=96)
 
             if len(peaks) > 0:
@@ -428,12 +431,11 @@ class Exp_Main(Exp_Basic):
                 top_peaks = peaks[np.argsort(peak_heights)[-3:]][::-1]
 
                 fig, axes = plt.subplots(len(top_peaks), 1, figsize=(18, 6 * len(top_peaks)), sharex=False)
-                if len(top_peaks) == 1:
-                    axes = [axes]
+                if len(top_peaks) == 1: axes = [axes]
 
                 for i, peak_idx in enumerate(top_peaks):
-                    start_window = max(0, peak_idx - 384)  # 前 96 小时
-                    end_window = min(len(obs_real), peak_idx + 384)  # 后 96 小时
+                    start_window = max(0, peak_idx - 384)
+                    end_window = min(len(obs_real), peak_idx + 384)
 
                     event_time = val_time_index[start_window:end_window]
                     event_obs = obs_real[start_window:end_window]
@@ -441,8 +443,8 @@ class Exp_Main(Exp_Basic):
 
                     axes[i].plot(event_time, event_obs, label='Observation (Actual Water Level)', color='blue',
                                  alpha=0.7)
-                    axes[i].plot(event_time, event_pred, label='PatchTST 1-Step Prediction', color='red', alpha=0.8,
-                                 linestyle='--')
+                    axes[i].plot(event_time, event_pred, label='PatchTST (Dual-Lock) 1-Step Prediction', color='red',
+                                 alpha=0.8, linestyle='--')
                     axes[i].axhline(y=FLOOD_THRESHOLD, color='black', linestyle=':', label='Floor Level (4.43m)')
 
                     peak_time_str = event_time.values[peak_idx - start_window]
@@ -451,9 +453,7 @@ class Exp_Main(Exp_Basic):
                     else:
                         peak_time_str = str(peak_time_str)
 
-                    axes[i].set_title(
-                        f'Targeted Flood Event {i + 1} | Peak Time: {peak_time_str}',
-                        fontsize=14)
+                    axes[i].set_title(f'Targeted Flood Event {i + 1} | Peak Time: {peak_time_str}', fontsize=14)
                     axes[i].set_ylabel('Water Level Height (m)')
                     axes[i].legend(loc='upper right')
 
@@ -465,16 +465,16 @@ class Exp_Main(Exp_Basic):
                 plt.figure(figsize=(20, 6))
                 plot_len = min(3000, len(obs_real))
                 plt.plot(val_time_index[:plot_len], obs_real[:plot_len], label='Observation', color='blue', alpha=0.7)
-                plt.plot(val_time_index[:plot_len], preds_real[:plot_len], label='PatchTST Prediction', color='red',
-                         linestyle='--')
+                plt.plot(val_time_index[:plot_len], preds_real[:plot_len], label='PatchTST (Dual-Lock) Prediction',
+                         color='red', linestyle='--')
                 plt.axhline(y=FLOOD_THRESHOLD, color='black', linestyle=':', label='Floor Level (4.43m)')
-                plt.title(f'PatchTST Test Evaluation (No Floods Detected)')
+                plt.title('PatchTST Test Evaluation (No Floods Detected)')
                 plt.legend(loc='upper right')
                 plt.tight_layout()
                 plt.savefig(plot_filename, dpi=300)
 
         except Exception as e:
-            print(f"[WARNING !!!!!!!!!!!!] Failed to generate flood evaluation plot: {e}")
+            print(f"[WARNING] Failed to generate flood evaluation plot: {e}")
 
         return
 
@@ -487,47 +487,25 @@ class Exp_Main(Exp_Basic):
             self.model.load_state_dict(torch.load(best_model_path))
 
         preds = []
-
         self.model.eval()
         with torch.no_grad():
             for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(pred_loader):
                 batch_x = batch_x.float().to(self.device)
-                batch_y = batch_y.float()
-                batch_x_mark = batch_x_mark.float().to(self.device)
-                batch_y_mark = batch_y_mark.float().to(self.device)
 
-                # decoder input
-                dec_inp = torch.zeros([batch_y.shape[0], self.args.pred_len, batch_y.shape[2]]).float().to(batch_y.device)
-                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
-                # encoder - decoder
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
-                        if 'Linear' in self.args.model or 'TST' in self.args.model:
-                            outputs = self.model(batch_x)
-                        else:
-                            if self.args.output_attention:
-                                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                            else:
-                                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                        outputs, clf_outputs = self.model(batch_x)
                 else:
-                    if 'Linear' in self.args.model or 'TST' in self.args.model:
-                        outputs = self.model(batch_x)
-                    else:
-                        if self.args.output_attention:
-                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                        else:
-                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-                pred = outputs.detach().cpu().numpy()  # .squeeze()
-                preds.append(pred)
+                    outputs, clf_outputs = self.model(batch_x)
+
+                preds.append(outputs.detach().cpu().numpy())
 
         preds = np.array(preds)
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
 
-        # result save
         folder_path = './results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
         np.save(folder_path + 'real_prediction.npy', preds)
-
         return
