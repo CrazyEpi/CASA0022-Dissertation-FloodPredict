@@ -23,9 +23,11 @@ warnings.filterwarnings('ignore')
 
 
 class AsymmetricFloodLoss(nn.Module):
+    # Custom loss function for the flood forecasting project
+    # Punish under-prediction harder because missing a flood is dangerous for the area
     def __init__(self, delta=1.0, peak_penalty=1.2, under_predict_factor=3.5, over_predict_penalty=3.0, deadzone=0.15):
         super().__init__()
-        self.huber = nn.HuberLoss(reduction='none', delta=delta)
+        self.huber = nn.HuberLoss(reduction='none', delta=delta)  # Use huber loss to avoid exploding gradients
         self.peak_penalty = peak_penalty
         self.under_predict_factor = under_predict_factor
         self.over_predict_penalty = over_predict_penalty
@@ -34,15 +36,20 @@ class AsymmetricFloodLoss(nn.Module):
     def forward(self, pred, true):
         error = pred - true
         base_loss = self.huber(pred, true)
+
+        # Focus more on the critical water levels
         critical_level = torch.clamp(torch.maximum(pred, true), max=3.0)
         severity_weights = torch.exp(self.peak_penalty * F.relu(critical_level))
 
+        # Heavy penalty if true level then than predict
         under_predict_mask = (true > 1.2) & (error < 0)
         under_penalty = under_predict_mask.float() * self.under_predict_factor
 
+        # Penalty for over-predicting when it is safe (to reduce false alarms)
         over_predict_mask = (true < 1.0) & (error > self.deadzone)
         over_penalty = over_predict_mask.float() * self.over_predict_penalty
 
+        # Ignore small errors in the safe margin
         safe_margin_mask = (error > 0) & (error <= self.deadzone)
         base_loss = torch.where(safe_margin_mask, base_loss * 0.1, base_loss)
 
@@ -56,6 +63,7 @@ class Exp_Main(Exp_Basic):
         super(Exp_Main, self).__init__(args)
 
     def _build_model(self):
+        # Select the architecture for the time series task
         model_dict = {
             'Autoformer': Autoformer,
             'Transformer': Transformer,
@@ -66,6 +74,8 @@ class Exp_Main(Exp_Basic):
             'PatchTST': PatchTST,
         }
         model = model_dict[self.args.model].Model(self.args).float()
+        print(f"[Model Setup] Successfully initialized {self.args.model} architecture.")
+
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
         return model
@@ -91,6 +101,7 @@ class Exp_Main(Exp_Basic):
 
         bce_criterion = nn.BCEWithLogitsLoss()
 
+        # flood threshold
         flood_threshold_real = 4.43
         try:
             flood_threshold_scaled = vali_data.scaler.transform(
@@ -130,7 +141,7 @@ class Exp_Main(Exp_Basic):
                 vali_correct += (torch.abs(preds_flat - target_flat) < 0.2).sum().item()
                 total_vali_samples += target_flat.numel()
 
-                # 完美平衡阈值
+                # balanced threshold classification
                 pred_f = (preds_flat > flood_threshold_scaled) & (clf_probs > 0.45)
                 target_f = target_flat > flood_threshold_scaled
 
@@ -147,6 +158,7 @@ class Exp_Main(Exp_Basic):
         return total_loss, vali_recall, vali_precision, vali_num_acc
 
     def train(self, setting):
+        print("[Training] Loading dataset splits...")
         train_data, train_loader = self._get_data(flag='train')
         vali_data, vali_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
@@ -158,13 +170,12 @@ class Exp_Main(Exp_Basic):
         time_now = time.time()
         train_steps = len(train_loader)
 
-        # 保留原有的 EarlyStopping 用于打印，但拦截它的保存逻辑
         early_stopping = EarlyStopping(patience=self.args.patience, verbose=True)
 
         model_optim = self._select_optimizer()
         criterion = self._select_criterion()
 
-        # 分类器权重调优为 6.0，既不过度敏感也不麻木
+        # classifier weight
         pos_weight = torch.tensor([6.0]).to(self.device)
         bce_criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 
@@ -185,10 +196,11 @@ class Exp_Main(Exp_Basic):
                                             epochs=self.args.train_epochs,
                                             max_lr=self.args.learning_rate)
 
-        # 【F1 早停机制初始化】
+        # [Init F1 early stopping mechanism]
         self.best_vali_f1 = -1.0
         self.f1_patience_counter = 0
 
+        print(f"[Training] Starting main epoch loop. Max epochs: {self.args.train_epochs}")
         for epoch in range(self.args.train_epochs):
             iter_count = 0
             train_loss = []
@@ -279,21 +291,17 @@ class Exp_Main(Exp_Basic):
                 f"    --> [Validation] Acc: {vali_acc:.2%} | Recall: {vali_recall:.2%} | Precision: {vali_precision:.2%}")
             print(f"    --> [Test] Acc: {test_acc:.2%} | Recall: {test_recall:.2%} | Precision: {test_precision:.2%}")
 
-            # ==========================================================
-            # 【终极防汛 F1 早停机制】
-            # ==========================================================
             if (vali_recall + vali_precision) > 0:
                 vali_f1 = 2 * (vali_precision * vali_recall) / (vali_precision + vali_recall)
             else:
                 vali_f1 = 0.0
 
-            # 如果 F1 分数破纪录，立刻强制保存模型覆盖旧权重
             if vali_f1 > self.best_vali_f1:
                 self.best_vali_f1 = vali_f1
                 self.f1_patience_counter = 0
                 best_model_path = path + '/' + 'checkpoint.pth'
                 torch.save(self.model.state_dict(), best_model_path)
-                print(f"    [🌟 BEST MODEL SAVED] New Best Vali F1: {vali_f1:.2%}!")
+                print(f"    [!!!!! BEST MODEL SAVED] New Best Vali F1: {vali_f1:.2%}!")
             else:
                 self.f1_patience_counter += 1
                 print(f"    [Patience] F1 unchanged. Counter: {self.f1_patience_counter} / {self.args.patience}")
@@ -307,7 +315,8 @@ class Exp_Main(Exp_Basic):
             else:
                 print('Updating learning rate to {}'.format(scheduler.get_last_lr()[0]))
 
-        # 训练全部结束后，加载那个具有最高 F1 的极品权重
+        # After all training, load the extreme best weights with highest F1
+        print("[Training Complete] Loading the best model weights back...")
         best_model_path = path + '/' + 'checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
 
@@ -378,60 +387,127 @@ class Exp_Main(Exp_Basic):
 
         np.save(folder_path + 'pred.npy', preds)
 
-        # ==========================================================
-        # 【物理蒙眼与双重锁门画图逻辑】：10天大视野下，N时刻对未来 24h 预测能力
-        # ==========================================================
         try:
-            print("[SYSTEM] Generating 10-Day Context & 24-Hour Forecasting Evaluation Plots...")
-
             scaler = test_data.scaler
             mean = scaler.mean_[-1]
             scale = scaler.scale_[-1]
 
             FLOOD_THRESHOLD = 4.43
             try:
-                # 尝试获取你定义在文件顶部的全局阈值
                 CLF_THRESHOLD = GLOBAL_CLF_THRESHOLD
             except NameError:
                 CLF_THRESHOLD = 0.5
 
-            # 提取最后一列水位 (还原量纲)
             target_trues = (trues[:, :, -1] * scale) + mean
             target_preds_raw = (preds[:, :, -1] * scale) + mean
             target_clf_probs = clf_preds[:, :, -1]
 
-            # 【核心重构】：利用滑动窗口的第 1 步，拼合出一条连续的全局时间轴
-            # 突破模型一次只能预测 24 小时的限制，用来绘制 10 天的全局背景能力线
             continuous_true = np.concatenate([target_trues[:, 0], target_trues[-1, 1:]])
             continuous_pred_raw = np.concatenate([target_preds_raw[:, 0], target_preds_raw[-1, 1:]])
 
-            # 双重锁门机制：在未来 96 步的每一步上，如果分类概率低于阈值，强制压制到安全水位
             target_preds_locked = np.where(
                 target_clf_probs < CLF_THRESHOLD,
                 np.minimum(target_preds_raw, FLOOD_THRESHOLD - 0.1),
                 target_preds_raw
             )
-            # 生成锁门后的 10 天连续滚动线
             continuous_pred_locked = np.concatenate([target_preds_locked[:, 0], target_preds_locked[-1, 1:]])
 
-            # 寻找测试集中最危险的事件样本（按波峰高度排序）
+            print("\n" + "=" * 60)
+            print("[House Mill IoT Node] Initiating Event-Based Flood Evaluation (Test Set Period)")
+            print("=" * 60)
+
+            # Use scipy.signal.find_peaks to find independent event peaks.
+            # Distance 96 steps (24 hours) avoids counting the same storm multiple times.
+            from scipy.signal import find_peaks
+            true_peaks, _ = find_peaks(continuous_true, height=FLOOD_THRESHOLD, distance=96)
+            pred_peaks, _ = find_peaks(continuous_pred_locked, height=FLOOD_THRESHOLD, distance=96)
+
+            detected_events = 0
+            missed_events = 0
+            false_alarms = 0
+            lead_times = []
+            peak_errors = []
+
+            # 1. Calculate the true "full view" warning lead time (Horizon-based Lead Time)
+            for t_peak in true_peaks:
+                earliest_alert_N = None
+
+                # Trace back 96 steps (24 hours) from the exact moment the flood peak happened
+                search_start = max(0, t_peak - 96)
+
+                # Move along the timeline to find when the model "first" saw this flood in its 24h horizon
+                for N in range(search_start, t_peak + 1):
+                    if N >= len(target_preds_locked): break
+
+                    # Extract the full 96-step forecast line the model inferred towards the future at moment N
+                    forecast_window = target_preds_locked[N]
+
+                    # As long as the predicted highest water level crosses the red line in this view, sound the alarm
+                    if np.max(forecast_window) >= FLOOD_THRESHOLD:
+                        earliest_alert_N = N
+                        break  # Found the earliest warning moment, stop searching!
+
+                if earliest_alert_N is not None:
+                    detected_events += 1
+                    # Real lead time = actual peak moment - the moment model first noticed
+                    lead_time_steps = t_peak - earliest_alert_N
+                    lead_times.append(lead_time_steps / 4.0)  # Convert 15 min steps to hours
+
+                    pred_max = np.max(target_preds_locked[earliest_alert_N])
+                    true_max = continuous_true[t_peak]
+                    peak_errors.append(pred_max - true_max)
+                else:
+                    missed_events += 1
+
+            # 2. Evaluate pure false alarms (False Positives)
+            for p_peak in pred_peaks:
+                search_start = max(0, p_peak - 96)
+                search_end = min(len(continuous_true), p_peak + 96)
+                # If the model sounds an alarm, but not a single flood happens in this 48-hour window
+                if np.max(continuous_true[search_start:search_end]) < FLOOD_THRESHOLD:
+                    false_alarms += 1
+
+            total_actual = len(true_peaks)
+            event_recall = detected_events / total_actual if total_actual > 0 else 1.0
+            event_precision = detected_events / (detected_events + false_alarms) if (
+                                                                                            detected_events + false_alarms) > 0 else 1.0
+            avg_lead_time = np.mean(lead_times) if len(lead_times) > 0 else 0.0
+            avg_peak_error = np.mean(peak_errors) if len(peak_errors) > 0 else 0.0
+
+            print(f" EVENT-BASED METRICS (Real-world IoT Perspective):")
+            print(f"  - Total Actual Flood Events: {total_actual} storms")
+            print(f"  - Successfully Detected:  {detected_events} storms")
+            print(f"  - Missed Events (FN):     {missed_events} storms")
+            print(f"  - False Alarms (FP):      {false_alarms} phantom alerts")
+            print("-" * 40)
+            print(f"  - Event Recall:    {event_recall:.2%}")
+            print(f"  - Event Precision: {event_precision:.2%}")
+            print(f"  - Avg Warning Lead Time: {avg_lead_time:.1f} Hours before peak")
+            print(f"  - Avg Peak Error:        {avg_peak_error:+.2f} meters")
+            print("=" * 60 + "\n")
+
+            # Log to text file
+            with open("result.txt", 'a') as f:
+                f.write(f"IoT Event Metrics -> Recall: {event_recall:.2%} | Precision: {event_precision:.2%}\n")
+                f.write(f"Detected: {detected_events} | Missed: {missed_events} | False Alarms: {false_alarms}\n")
+                f.write(f"Avg Lead Time: {avg_lead_time:.1f}h | Peak Error: {avg_peak_error:+.2f}m\n\n")
+
+            # Drawing logic below...
+            print("[SYSTEM] Generating 10-Day Context & 24-Hour Forecasting Evaluation Plots...")
+
             max_water_levels = target_trues.max(axis=1)
             sorted_indices = np.argsort(max_water_levels)[::-1]
 
             top_indices = []
-            # 独立样本间隔至少 7 天 (7天 * 24h * 4个15min = 672步)
             min_distance = 672
 
             for idx in sorted_indices:
                 if len(top_indices) >= 3:
                     break
-                # 检查距离冲突
                 if not any(abs(idx - selected_idx) < min_distance for selected_idx in top_indices):
-                    # 确保这个样本逼近或超过洪水线，有展现预警的价值
                     if max_water_levels[idx] > FLOOD_THRESHOLD - 0.5:
                         top_indices.append(idx)
 
-            # 如果没发生严重洪水导致凑不够 3 个，就放宽洪水线要求，只要满足 7 天间隔即可
             if len(top_indices) < 3:
                 top_indices = []
                 for idx in sorted_indices:
@@ -443,27 +519,20 @@ class Exp_Main(Exp_Basic):
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             plot_filename = os.path.join(folder_path, f'forecast_10days_evaluation_{timestamp}.png')
 
-            # 画幅横向拉长 (18, 4.5) 方便 10 天横轴“挤一挤”
             fig, axes = plt.subplots(len(top_indices), 1, figsize=(18, 4.5 * len(top_indices)), sharex=False)
             if len(top_indices) == 1: axes = [axes]
 
             for i, idx in enumerate(top_indices):
-                pred_len = target_trues.shape[1]  # 96 步 (24小时)
-
-                # 设定 10 天的展示窗口: N时刻的前 7 天 (672步) 到 后 3 天 (288步) -> 共 960 步
+                pred_len = target_trues.shape[1]
                 plot_start = max(0, idx - 672)
                 plot_end = min(len(continuous_true), idx + 288)
 
-                # 构造相对时间轴 (设当前评估时刻 N 为 0)
                 time_axis = np.arange(plot_start - idx, plot_end - idx)
                 pred_axis = np.arange(0, pred_len)
 
-                # 1. 铺底：画出全局 10 天的无缝真实水位线 (粗蓝线)
                 axes[i].plot(time_axis, continuous_true[plot_start:plot_end],
-                             label='Global True Water Level', color='#1f77b4', alpha=0.8,
-                             linewidth=2)
+                             label='Global True Water Level', color='#1f77b4', alpha=0.8, linewidth=2)
 
-                # 2. 预测背景：画出全局 10 天的连续滚动预测 (反映模型的综合追踪实力，细线)
                 axes[i].plot(time_axis, continuous_pred_raw[plot_start:plot_end],
                              label='Global Raw Regression (Rolling)', color='#ff7f0e', alpha=0.4, linestyle='-',
                              linewidth=1.2)
@@ -471,7 +540,6 @@ class Exp_Main(Exp_Basic):
                              label='Global Dual-Lock (Rolling)', color='#d62728', alpha=0.4, linestyle='-',
                              linewidth=1.2)
 
-                # 3. 核心大招：画出在 N 时刻触发的、针对未来 24 小时的长程完整预测 (粗虚线)
                 axes[i].plot(pred_axis, target_preds_raw[idx],
                              label='24h Horizon Raw Forecast (96-step)', color='#ff7f0e', alpha=1.0, linestyle='-.',
                              linewidth=2.5)
@@ -479,12 +547,9 @@ class Exp_Main(Exp_Basic):
                              label='24h Horizon Dual-Lock (Final Alert)', color='#d62728', alpha=1.0, linestyle='--',
                              linewidth=3)
 
-                # 视觉聚光灯：用淡黄色背景块高亮标出模型正在推演的这 24 小时
                 axes[i].axvspan(0, pred_len - 1, color='yellow', alpha=0.15, label='24h Inference Window')
 
-                # 辅助线：当前时刻 N
                 axes[i].axvline(x=0, color='black', linestyle='-', alpha=0.8, label='Current Moment (N)')
-                # 辅助线：洪水警戒线
                 axes[i].axhline(y=FLOOD_THRESHOLD, color='red', linestyle=':', alpha=0.8,
                                 label=f'Flood Threshold ({FLOOD_THRESHOLD}m)')
 
@@ -494,16 +559,15 @@ class Exp_Main(Exp_Basic):
                 axes[i].set_xlabel('Time Steps (15-min intervals, 0 = Current Moment N)', fontsize=12)
                 axes[i].set_ylabel('Water Level (m)', fontsize=12)
 
-                # 强制锁定横轴边界，确保 10 天视野铺满
                 axes[i].set_xlim([time_axis[0], time_axis[-1]])
                 axes[i].grid(True, alpha=0.3)
-
-                # 调整图例位置并分成 3 列，避免遮挡重要曲线
                 axes[i].legend(loc='upper right', fontsize=10, ncol=3)
 
             plt.tight_layout()
             plt.savefig(plot_filename, dpi=300)
             print(f"[SYSTEM] 10-Day Horizon Forecast evaluation plot saved to: {plot_filename}")
+            print(
+                "[Edge Prep] Validation sequence complete. Model weights are ready to be optimized for the ESP32-S3 deployment.")
 
         except Exception as e:
             print(f"[WARNING] Failed to generate 10-day forecast evaluation plot: {e}")

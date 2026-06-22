@@ -89,10 +89,8 @@ class Model(nn.Module):
                                            revin=revin, affine=affine,
                                            subtract_last=subtract_last, verbose=verbose, **kwargs)
 
-        # 【核心强化 1】：特征交叉通道
-        # self.channel_mixing = nn.Linear(c_in, c_in)
 
-        # 【核心强化 2】：多任务防汛分类头
+        # Classification Head
         self.clf_head = nn.Sequential(
             nn.Linear(c_in, c_in),
             nn.GELU(),
@@ -112,9 +110,6 @@ class Model(nn.Module):
             x_in = x.permute(0, 2, 1)
             x_out = self.model(x_in)
             x_out = x_out.permute(0, 2, 1)
-
-        # 【核心强化 3】：残差融合，完美保留水位物理惯性
-        # x_out = self.channel_mixing(x_out) + x_out
 
         clf_out = self.clf_head(x_out.detach())
 

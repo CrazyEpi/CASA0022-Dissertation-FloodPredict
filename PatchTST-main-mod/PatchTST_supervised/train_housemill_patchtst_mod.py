@@ -71,10 +71,10 @@ cmd = [
     "--revin", "0",
     "--des", "Final_Baseline",
     "--train_epochs", "60",
-    "--patience", "5",
+    "--patience", "8",
     "--itr", "1",
     "--batch_size", "128",
-    "--learning_rate", "0.0001" # 建议用0.0001，更稳定
+    "--learning_rate", "0.0001"
 ]
 
 # ==========================================
