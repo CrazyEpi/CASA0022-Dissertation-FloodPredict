@@ -21,7 +21,6 @@ class Model(nn.Module):
 
         super().__init__()
 
-        # Load parameters
         c_in = configs.enc_in
         context_window = configs.seq_len
         target_window = configs.pred_len
@@ -33,27 +32,22 @@ class Model(nn.Module):
         dropout = configs.dropout
         fc_dropout = configs.fc_dropout
         head_dropout = configs.head_dropout
-
         individual = configs.individual
-
         patch_len = configs.patch_len
         stride = configs.stride
         padding_patch = configs.padding_patch
-
         revin = configs.revin
         affine = configs.affine
         subtract_last = configs.subtract_last
-
         decomposition = configs.decomposition
         kernel_size = configs.kernel_size
 
-        # Base model initialization
         self.decomposition = decomposition
         if self.decomposition:
             self.decomp_module = series_decomp(kernel_size)
             self.model_trend = PatchTST_backbone(c_in=c_in, context_window=context_window, target_window=target_window,
-                                                 patch_len=patch_len, stride=stride,
-                                                 max_seq_len=max_seq_len, n_layers=n_layers, d_model=d_model,
+                                                 patch_len=patch_len, stride=stride, max_seq_len=max_seq_len,
+                                                 n_layers=n_layers, d_model=d_model,
                                                  n_heads=n_heads, d_k=d_k, d_v=d_v, d_ff=d_ff, norm=norm,
                                                  attn_dropout=attn_dropout,
                                                  dropout=dropout, act=act, key_padding_mask=key_padding_mask,
@@ -66,8 +60,8 @@ class Model(nn.Module):
                                                  individual=individual, revin=revin, affine=affine,
                                                  subtract_last=subtract_last, verbose=verbose, **kwargs)
             self.model_res = PatchTST_backbone(c_in=c_in, context_window=context_window, target_window=target_window,
-                                               patch_len=patch_len, stride=stride,
-                                               max_seq_len=max_seq_len, n_layers=n_layers, d_model=d_model,
+                                               patch_len=patch_len, stride=stride, max_seq_len=max_seq_len,
+                                               n_layers=n_layers, d_model=d_model,
                                                n_heads=n_heads, d_k=d_k, d_v=d_v, d_ff=d_ff, norm=norm,
                                                attn_dropout=attn_dropout,
                                                dropout=dropout, act=act, key_padding_mask=key_padding_mask,
@@ -81,8 +75,8 @@ class Model(nn.Module):
                                                subtract_last=subtract_last, verbose=verbose, **kwargs)
         else:
             self.model = PatchTST_backbone(c_in=c_in, context_window=context_window, target_window=target_window,
-                                           patch_len=patch_len, stride=stride,
-                                           max_seq_len=max_seq_len, n_layers=n_layers, d_model=d_model,
+                                           patch_len=patch_len, stride=stride, max_seq_len=max_seq_len,
+                                           n_layers=n_layers, d_model=d_model,
                                            n_heads=n_heads, d_k=d_k, d_v=d_v, d_ff=d_ff, norm=norm,
                                            attn_dropout=attn_dropout,
                                            dropout=dropout, act=act, key_padding_mask=key_padding_mask,
@@ -95,9 +89,10 @@ class Model(nn.Module):
                                            revin=revin, affine=affine,
                                            subtract_last=subtract_last, verbose=verbose, **kwargs)
 
-        self.channel_mixing = nn.Linear(c_in, c_in)
+        # 【核心强化 1】：特征交叉通道
+        # self.channel_mixing = nn.Linear(c_in, c_in)
 
-        # Multi-task Classification Head: Parallel to the regression output
+        # 【核心强化 2】：多任务防汛分类头
         self.clf_head = nn.Sequential(
             nn.Linear(c_in, c_in),
             nn.GELU(),
@@ -106,7 +101,6 @@ class Model(nn.Module):
         )
 
     def forward(self, x):
-        # x shape: [Batch, Input length, Channel]
         if self.decomposition:
             res_init, trend_init = self.decomp_module(x)
             res_init, trend_init = res_init.permute(0, 2, 1), trend_init.permute(0, 2, 1)
@@ -119,9 +113,9 @@ class Model(nn.Module):
             x_out = self.model(x_in)
             x_out = x_out.permute(0, 2, 1)
 
-        x_out = self.channel_mixing(x_out)
-            # Pass the extracted features through the classification head
-        # clf_out shape: [Batch, Pred_Len, 1]
-        clf_out = self.clf_head(x_out)
+        # 【核心强化 3】：残差融合，完美保留水位物理惯性
+        # x_out = self.channel_mixing(x_out) + x_out
+
+        clf_out = self.clf_head(x_out.detach())
 
         return x_out, clf_out
