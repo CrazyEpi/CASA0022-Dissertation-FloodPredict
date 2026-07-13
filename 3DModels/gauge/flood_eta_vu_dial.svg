@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="73.3mm" height="39.6mm" viewBox="0 0 73.3 39.6">
+  <title>Flood ETA VU Dial</title>
+  <desc>1:1 printable VU replacement dial. Ticks sit near the top of the visible 30 mm area; numbers and caption sit below the sweep.</desc>
+  <defs>
+    <style>
+      .face { fill: #f3e39a; }
+      .edge { fill: none; stroke: #cbbd75; stroke-width: 0.18; }
+      .cutline { fill: none; stroke: #8a8a8a; stroke-width: 0.10; stroke-dasharray: 0.9 0.55; vector-effect: non-scaling-stroke; }
+      .arc-red { fill: none; stroke: #a90f17; stroke-width: 2.15; stroke-linecap: butt; stroke-linejoin: round; }
+      .arc-black { fill: none; stroke: #111111; stroke-width: 2.15; stroke-linecap: butt; stroke-linejoin: round; }
+      .tick { stroke: #111111; stroke-width: 0.76; stroke-linecap: butt; }
+      .tick-small { stroke: #111111; stroke-width: 0.46; stroke-linecap: butt; }
+      .tick-red { stroke: #a90f17; }
+      .label { font-family: Arial, Helvetica, sans-serif; font-size: 4.0px; font-weight: 800; letter-spacing: 0; text-anchor: middle; dominant-baseline: middle; fill: #111111; }
+      .label-red { fill: #a90f17; }
+      .caption { font-family: Arial, Helvetica, sans-serif; font-size: 2.55px; font-weight: 800; letter-spacing: 0; text-anchor: middle; fill: #111111; }
+    </style>
+  </defs>
+
+  <path id="dial-outline-fill" class="face"
+        d="M0 0 L73.3 0 L73.3 29.5 L72.2 29.5 L72.2 34.6 L58.5 34.6 L58.5 39.6 L45.7 39.6 C44.9 34.7 41.4 31.2 36.65 31.2 C31.9 31.2 28.4 34.7 27.6 39.6 L15 39.6 L15 34.6 L1.2 34.6 L1.2 30.3 L0 30.3 Z"/>
+  <path id="dial-outline-edge" class="edge"
+        d="M0 0 L73.3 0 L73.3 29.5 L72.2 29.5 L72.2 34.6 L58.5 34.6 L58.5 39.6 L45.7 39.6 C44.9 34.7 41.4 31.2 36.65 31.2 C31.9 31.2 28.4 34.7 27.6 39.6 L15 39.6 L15 34.6 L1.2 34.6 L1.2 30.3 L0 30.3 Z"/>
+
+  <g id="print-art">
+    <!-- Top-mounted VU sweep: center=(36.65,47.0), 0 h=132 deg, 24 h=48 deg. -->
+    <polyline class="arc-red"
+              points="11.22,18.76 11.80,18.25 12.39,17.75 12.99,17.26 13.60,16.79 14.22,16.32 14.85,15.87 15.49,15.43 16.14,15.01 16.80,14.60 17.46,14.20 18.13,13.82 18.81,13.45 19.50,13.09 20.19,12.75 20.89,12.42 21.60,12.11 22.31,11.81 23.03,11.52"/>
+    <polyline class="arc-black"
+              points="23.03,11.52 23.92,11.19 24.82,10.89 25.73,10.60 26.64,10.34 27.56,10.10 28.48,9.89 29.41,9.70 30.35,9.53 31.29,9.38 32.23,9.26 33.17,9.16 34.12,9.08 35.07,9.03 36.02,9.01 36.97,9.00 37.92,9.02 38.86,9.06 39.81,9.13 40.76,9.22 41.70,9.34 42.64,9.47 43.57,9.64 44.51,9.82 45.43,10.03 46.35,10.26 47.27,10.51 48.18,10.79 49.08,11.09 49.97,11.41 50.86,11.76 51.73,12.12 52.60,12.51 53.46,12.92 54.30,13.35 55.14,13.80 55.96,14.27 56.77,14.77 57.57,15.28 58.36,15.81 59.13,16.36 59.89,16.94 60.63,17.53 61.36,18.13 62.08,18.76"/>
+
+    <g id="major-ticks">
+      <line class="tick tick-red" x1="7.61" y1="14.75" x2="10.69" y2="18.17"/>
+      <line class="tick tick-red" x1="13.97" y1="10.00" x2="16.38" y2="13.92"/>
+      <line class="tick tick-red" x1="21.10" y1="6.48" x2="22.75" y2="10.78"/>
+      <line class="tick" x1="36.65" y1="3.60" x2="36.65" y2="8.20"/>
+      <line class="tick" x1="52.20" y1="6.48" x2="50.55" y2="10.78"/>
+      <line class="tick" x1="65.69" y1="14.75" x2="62.61" y2="18.17"/>
+    </g>
+
+    <g id="minor-ticks">
+      <line class="tick-small" x1="28.98" y1="5.60" x2="29.56" y2="8.75"/>
+      <line class="tick-small" x1="44.32" y1="5.60" x2="43.74" y2="8.75"/>
+      <line class="tick-small" x1="58.65" y1="11.10" x2="56.98" y2="13.83"/>
+    </g>
+
+    <g id="hour-labels">
+      <text class="label label-red" x="15.57" y="23.59">0</text>
+      <text class="label label-red" x="20.19" y="20.14">3</text>
+      <text class="label label-red" x="25.36" y="17.59">6</text>
+      <text class="label" x="36.65" y="15.50">12</text>
+      <text class="label" x="47.94" y="17.59">18</text>
+      <text class="label" x="57.73" y="23.59">24</text>
+    </g>
+
+    <text class="caption" x="36.65" y="28.35">FLOOD ETA HOURS</text>
+  </g>
+
+  <path id="cutline" class="cutline"
+        d="M0 0 L73.3 0 L73.3 29.5 L72.2 29.5 L72.2 34.6 L58.5 34.6 L58.5 39.6 L45.7 39.6 C44.9 34.7 41.4 31.2 36.65 31.2 C31.9 31.2 28.4 34.7 27.6 39.6 L15 39.6 L15 34.6 L1.2 34.6 L1.2 30.3 L0 30.3 Z"/>
+</svg>
