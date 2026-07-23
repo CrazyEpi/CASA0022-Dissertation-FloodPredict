@@ -3,6 +3,7 @@
 #include <Preferences.h>
 #include <PubSubClient.h>
 #include <WiFi.h>
+#include <time.h>
 
 #if __has_include(<esp_arduino_version.h>)
 #include <esp_arduino_version.h>
@@ -26,6 +27,17 @@ const char *MQTT_TOPIC_COMMAND = "student/housemill/flood/command";
 const char *MQTT_TOPIC_CONTROL_STATUS = "student/housemill/control/diorama/status";
 const char *MQTT_CONTROL_OFFLINE_PAYLOAD = "{\"device\":\"diorama\",\"online\":false}";
 const bool MQTT_RETAIN_STATUS = false;
+
+// Pump schedule uses Europe/London local time, including BST daylight saving.
+// If NTP has not provided a valid time, the schedule fails open and the
+// exhibition continues with its existing behavior.
+const char *TIME_ZONE = "GMT0BST,M3.5.0/1,M10.5.0/2";
+const char *NTP_SERVER_PRIMARY = "pool.ntp.org";
+const char *NTP_SERVER_SECONDARY = "time.google.com";
+const char *NTP_SERVER_TERTIARY = "time.cloudflare.com";
+const uint8_t PUMP_WINDOW_START_HOUR = 10;
+const uint8_t PUMP_WINDOW_END_HOUR = 18;
+const time_t MIN_VALID_UNIX_TIME = 1704067200; // 2024-01-01 UTC.
 
 // DRV8833 wiring.
 const int PUMP_PWM_PIN = 4;        // DRV8833 AIN1
@@ -52,20 +64,22 @@ const uint32_t DEFAULT_COUNTDOWN_SECONDS = 110; // Meter goes 24h -> 0h; pump st
 const uint32_t DEFAULT_TOPOFF_SECONDS = 1;      // Minimal 0h transition; no extra pumping.
 const uint32_t DEFAULT_HOLD_ZERO_SECONDS = 8;   // Short peak-water hold at 0h.
 const uint32_t DEFAULT_DRAIN_SECONDS = 25;      // Faster reset while the water drains.
-const uint32_t DEFAULT_GAP_SECONDS = 8;         // Short delay between cycles.
+const uint32_t DEFAULT_GAP_SECONDS = 15UL * 60UL; // 15-minute rest between cycles.
+const uint32_t MIN_GAP_SECONDS = 8;             // Never allow less than the previous 8-second gap.
 const bool DEFAULT_HOLD_PUMP_DURING_ZERO = false;
 const uint16_t DEFAULT_PUMP_VOLUME_PERCENT = 100;
 const uint16_t MIN_PUMP_VOLUME_PERCENT = 50;
 const uint16_t MAX_PUMP_VOLUME_PERCENT = 150;
-const uint32_t MAX_COMPLETE_CYCLE_MS = 180000UL;
+const uint32_t MAX_ACTIVE_CYCLE_MS = 180000UL;
 const uint32_t MIN_COMPRESSED_HOLD_MS = 3000UL;
 const uint32_t MIN_COMPRESSED_DRAIN_MS = 5000UL;
-const uint32_t MIN_COMPRESSED_GAP_MS = 5000UL;
-const uint8_t LOW_RISK_BASE_PUMP_PERCENT = 50;
-const uint8_t MEDIUM_RISK_BASE_PUMP_PERCENT = 77;
-const uint8_t HIGH_RISK_BASE_PUMP_PERCENT = 95;
+const uint32_t MIN_GAP_MS = MIN_GAP_SECONDS * 1000UL;
+const uint8_t LOW_RISK_BASE_PUMP_PERCENT = 45;
+const uint8_t MEDIUM_RISK_BASE_PUMP_PERCENT = 72;
+const uint8_t HIGH_RISK_BASE_PUMP_PERCENT = 120;
 
-const uint32_t CONFIG_VERSION = 3;
+const uint32_t CONFIG_VERSION = 4;
+const uint32_t PREVIOUS_CONFIG_VERSION = 3;
 const uint32_t PUBLISH_INTERVAL_MS = 1000;
 const uint32_t SERIAL_STATUS_INTERVAL_MS = 5000;
 const float FLOOD_DISPLAY_MAX_HOURS = 24.0f;
@@ -132,6 +146,13 @@ struct CycleTiming {
   uint32_t pumpStartMs = PUMP_START_DELAY_SECONDS * 1000UL;
   uint32_t pumpDurationMs = 0;
   bool volumeLimited = false;
+};
+
+struct PumpScheduleState {
+  bool timeKnown = false;
+  bool windowOpen = true;
+  uint8_t hour = 0;
+  uint8_t minute = 0;
 };
 
 RuntimeConfig cfg;
@@ -235,9 +256,13 @@ const char *runModeName(RunMode value) {
   return "pause";
 }
 
-uint32_t completeCycleMs() {
+uint32_t activeCycleMs() {
   return cycleTiming.countdownMs + cycleTiming.topoffMs + cycleTiming.holdMs +
-         cycleTiming.drainMs + cycleTiming.gapMs;
+         cycleTiming.drainMs;
+}
+
+uint32_t completeCycleMs() {
+  return activeCycleMs() + cycleTiming.gapMs;
 }
 
 void reducePhaseToFit(uint32_t &durationMs, uint32_t minimumMs, uint32_t &excessMs) {
@@ -283,20 +308,17 @@ void recalculateCycleTiming() {
   cycleTiming.gapMs = cfg.gapMs;
   cycleTiming.volumeLimited = false;
 
-  const uint32_t totalMs = completeCycleMs();
-  uint32_t excessMs = totalMs > MAX_COMPLETE_CYCLE_MS
-                          ? totalMs - MAX_COMPLETE_CYCLE_MS
+  const uint32_t totalMs = activeCycleMs();
+  uint32_t excessMs = totalMs > MAX_ACTIVE_CYCLE_MS
+                          ? totalMs - MAX_ACTIVE_CYCLE_MS
                           : 0;
 
-  // Preserve a useful drain/gap window where possible, then cap countdown as
-  // the final safety measure for unusual custom timing configurations.
+  // Keep the active flood demonstration within three minutes. The separate
+  // inter-cycle gap is never compressed.
   reducePhaseToFit(cycleTiming.holdMs,
                    min(cycleTiming.holdMs, MIN_COMPRESSED_HOLD_MS), excessMs);
   reducePhaseToFit(cycleTiming.drainMs,
                    min(cycleTiming.drainMs, MIN_COMPRESSED_DRAIN_MS), excessMs);
-  reducePhaseToFit(cycleTiming.gapMs,
-                   min(cycleTiming.gapMs, MIN_COMPRESSED_GAP_MS), excessMs);
-  reducePhaseToFit(cycleTiming.gapMs, 0, excessMs);
   reducePhaseToFit(cycleTiming.topoffMs, 1000UL, excessMs);
   reducePhaseToFit(cycleTiming.countdownMs, 5000UL, excessMs);
 
@@ -476,7 +498,9 @@ void saveRuntimeConfig() {
 void loadRuntimeConfig() {
   prefs.begin("diorama", true);
   const uint32_t savedVersion = prefs.getUInt("version", 0);
-  const bool useSavedConfig = savedVersion == CONFIG_VERSION;
+  const bool useSavedConfig =
+      savedVersion == CONFIG_VERSION || savedVersion == PREVIOUS_CONFIG_VERSION;
+  const bool migratePreviousConfig = savedVersion == PREVIOUS_CONFIG_VERSION;
 
   if (useSavedConfig) {
     cfg.pumpDuty = prefs.getUChar("duty", cfg.pumpDuty);
@@ -493,6 +517,11 @@ void loadRuntimeConfig() {
   }
   prefs.end();
 
+  if (migratePreviousConfig && cfg.gapMs <= MIN_GAP_MS) {
+    cfg.gapMs = DEFAULT_GAP_SECONDS * 1000UL;
+    Serial.println("Migrating the previous 8-second gap to the new 15-minute default.");
+  }
+
   cfg.pumpDuty = clampValue<uint8_t>(cfg.pumpDuty, 0, 255);
   cfg.pumpMode = cfg.pumpMode == PUMP_MODE_BURST_FULL_POWER ? PUMP_MODE_BURST_FULL_POWER : PUMP_MODE_PWM_AFTER_KICK;
   cfg.burstPercent = clampValue<uint8_t>(cfg.burstPercent, 0, 100);
@@ -503,7 +532,7 @@ void loadRuntimeConfig() {
   cfg.topoffMs = maxValue<uint32_t>(cfg.topoffMs, 1000UL);
   cfg.holdZeroMs = maxValue<uint32_t>(cfg.holdZeroMs, 1000UL);
   cfg.drainMs = maxValue<uint32_t>(cfg.drainMs, 5000UL);
-  cfg.gapMs = maxValue<uint32_t>(cfg.gapMs, 0UL);
+  cfg.gapMs = maxValue<uint32_t>(cfg.gapMs, MIN_GAP_MS);
   cfg.pumpVolumePercent = clampValue<uint16_t>(cfg.pumpVolumePercent,
                                                MIN_PUMP_VOLUME_PERCENT,
                                                MAX_PUMP_VOLUME_PERCENT);
@@ -513,6 +542,8 @@ void loadRuntimeConfig() {
 
   if (!useSavedConfig) {
     Serial.println("Applying new default exhibition timing.");
+  }
+  if (savedVersion != CONFIG_VERSION) {
     saveRuntimeConfig();
   }
 }
@@ -559,8 +590,46 @@ void updatePump() {
   writePumpDuty(PUMP_FULL_DUTY);
 }
 
+PumpScheduleState pumpScheduleState() {
+  PumpScheduleState state;
+  const time_t now = time(nullptr);
+  if (now < MIN_VALID_UNIX_TIME) {
+    return state;
+  }
+
+  struct tm localTime;
+  if (localtime_r(&now, &localTime) == nullptr) {
+    return state;
+  }
+
+  state.timeKnown = true;
+  state.hour = static_cast<uint8_t>(localTime.tm_hour);
+  state.minute = static_cast<uint8_t>(localTime.tm_min);
+  state.windowOpen =
+      state.hour >= PUMP_WINDOW_START_HOUR && state.hour < PUMP_WINDOW_END_HOUR;
+  return state;
+}
+
+const char *scheduleStatusText(const PumpScheduleState &state) {
+  if (!state.timeKnown) {
+    return "time_unknown_allow";
+  }
+  return state.windowOpen ? "open" : "closed";
+}
+
+void formatLocalTime(const PumpScheduleState &state, char *buffer, size_t size) {
+  if (!state.timeKnown) {
+    snprintf(buffer, size, "unknown");
+    return;
+  }
+  snprintf(buffer, size, "%02u:%02u", state.hour, state.minute);
+}
+
 bool pumpShouldRunNow() {
   if (!pumpEnabled || runMode != RunMode::Exhibition) {
+    return false;
+  }
+  if (!pumpScheduleState().windowOpen) {
     return false;
   }
 
@@ -748,7 +817,11 @@ bool commandTargetsDiorama(JsonDocument &doc) {
 void publishControlState() {
   if (!mqtt.connected()) return;
 
-  StaticJsonDocument<384> doc;
+  const PumpScheduleState schedule = pumpScheduleState();
+  char localTimeText[8];
+  formatLocalTime(schedule, localTimeText, sizeof(localTimeText));
+
+  StaticJsonDocument<512> doc;
   doc["device"] = "diorama";
   doc["online"] = true;
   doc["mode"] = runModeName(runMode);
@@ -759,11 +832,17 @@ void publishControlState() {
   doc["active_pump_volume_percent"] = activePumpVolumePercent;
   doc["complete_cycle_seconds"] = mainCycleSeconds();
   doc["remaining_cycle_seconds"] = remainingCycleSeconds();
+  doc["interval_seconds"] = cycleTiming.gapMs / 1000UL;
+  doc["minimum_interval_seconds"] = MIN_GAP_SECONDS;
+  doc["schedule"] = scheduleStatusText(schedule);
+  doc["schedule_time_known"] = schedule.timeKnown;
+  doc["pump_window_open"] = schedule.windowOpen;
+  doc["local_time"] = localTimeText;
   doc["volume_limited"] = cycleTiming.volumeLimited;
   doc["phase"] = phaseName(phase);
   doc["wifi"] = wifiStatusText();
 
-  char buffer[384];
+  char buffer[512];
   const size_t len = serializeJson(doc, buffer);
   mqtt.publish(MQTT_TOPIC_CONTROL_STATUS,
                reinterpret_cast<const uint8_t *>(buffer), len, true);
@@ -838,9 +917,21 @@ void applyCommand(JsonDocument &doc) {
     cfg.drainMs = maxValue<int>(doc["drain_seconds"].as<int>(), 5) * 1000UL;
     changed = true;
   }
-  if (doc["gap_seconds"].is<int>()) {
-    cfg.gapMs = maxValue<int>(doc["gap_seconds"].as<int>(), 0) * 1000UL;
+  if (doc["interval_seconds"].is<int>() || doc["gap_seconds"].is<int>()) {
+    const int requestedSeconds = doc["interval_seconds"].is<int>()
+                                     ? doc["interval_seconds"].as<int>()
+                                     : doc["gap_seconds"].as<int>();
+    const uint32_t intervalSeconds =
+        static_cast<uint32_t>(maxValue<int>(requestedSeconds, MIN_GAP_SECONDS));
+    cfg.gapMs = intervalSeconds * 1000UL;
+    cycleTiming.gapMs = cfg.gapMs;
+    if (phase == Phase::Gap) {
+      phaseStartedMs = millis();
+    }
     changed = true;
+    Serial.print("Inter-cycle interval: ");
+    Serial.print(intervalSeconds);
+    Serial.println("s");
   }
   if (doc["hold_pump"].is<bool>()) {
     cfg.holdPumpDuringZero = doc["hold_pump"].as<bool>();
@@ -944,8 +1035,11 @@ void publishStatus(bool force = false) {
   const char *phaseText = phaseName(phase);
   const char *riskText = riskName(currentRisk);
   const char *wifiText = wifiStatusText();
+  const PumpScheduleState schedule = pumpScheduleState();
+  char localTimeText[8];
+  formatLocalTime(schedule, localTimeText, sizeof(localTimeText));
 
-  StaticJsonDocument<384> doc;
+  StaticJsonDocument<512> doc;
   doc["mode"] = runModeName(runMode);
   doc["phase"] = phaseText;
   doc["risk_level"] = riskText;
@@ -958,13 +1052,18 @@ void publishStatus(bool force = false) {
   if (cfg.pumpVolumePercent != activePumpVolumePercent) {
     doc["next_pump_volume_percent"] = cfg.pumpVolumePercent;
   }
+  doc["interval_seconds"] = cycleTiming.gapMs / 1000UL;
   doc["complete_cycle_seconds"] = mainCycleSeconds();
   doc["remaining_cycle_seconds"] = remainingCycleSeconds();
   doc["wifi"] = wifiText;
+  doc["schedule"] = scheduleStatusText(schedule);
+  doc["schedule_time_known"] = schedule.timeKnown;
+  doc["pump_window_open"] = schedule.windowOpen;
+  doc["local_time"] = localTimeText;
   doc["cycle"] = cycleNumber;
   doc["seq"] = sequenceNumber++;
 
-  char buffer[384];
+  char buffer[512];
   const size_t len = serializeJson(doc, buffer);
 
   if (mqtt.connected() && runMode == RunMode::Exhibition) {
@@ -989,6 +1088,10 @@ void publishStatus(bool force = false) {
     Serial.print(pumpRequested ? PUMP_FULL_DUTY : 0);
     Serial.print(" wifi=");
     Serial.print(wifiText);
+    Serial.print(" schedule=");
+    Serial.print(scheduleStatusText(schedule));
+    Serial.print(" local_time=");
+    Serial.print(localTimeText);
     Serial.print(" mode=");
     Serial.print(runModeName(runMode));
     Serial.print(" pump_enabled=");
@@ -1025,6 +1128,7 @@ void printDebugJson() {
   doc["countdown_seconds"] = cycleTiming.countdownMs / 1000UL;
   doc["hold_seconds"] = cycleTiming.holdMs / 1000UL;
   doc["gap_seconds"] = cycleTiming.gapMs / 1000UL;
+  doc["minimum_gap_seconds"] = MIN_GAP_SECONDS;
   doc["complete_cycle_seconds"] = mainCycleSeconds();
   doc["remaining_cycle_seconds"] = remainingCycleSeconds();
   doc["volume_limited"] = cycleTiming.volumeLimited;
@@ -1046,6 +1150,15 @@ void printDebugJson() {
 
 void updateCycle() {
   if (runMode != RunMode::Exhibition || phase == Phase::Paused) {
+    pumpOff();
+    return;
+  }
+
+  const PumpScheduleState schedule = pumpScheduleState();
+  if (schedule.timeKnown && !schedule.windowOpen) {
+    if (phase != Phase::Gap) {
+      enterPhase(Phase::Gap);
+    }
     pumpOff();
     return;
   }
@@ -1081,7 +1194,7 @@ void printHelp() {
   Serial.println("  topoff 1           Short 0h visual transition, pump stays off");
   Serial.println("  hold 8             Seconds to keep meter at 0h");
   Serial.println("  drain 25           Base seconds for water to drain while meter returns to 24h");
-  Serial.println("  gap 8              Delay between cycles");
+  Serial.println("  gap 900            Delay between cycles; minimum 8 seconds");
   Serial.println("  random on/off      Toggle random intensity jitter");
   Serial.println("  risk random        Choose a new random risk scenario now");
   Serial.println("  risk low/medium/high  Force one risk scenario for testing");
@@ -1143,7 +1256,13 @@ void handleSerialLine(String line) {
     cfg.drainMs = maxValue<int>(line.substring(6).toInt(), 5) * 1000UL;
     saveRuntimeConfig();
   } else if (line.startsWith("gap ")) {
-    cfg.gapMs = maxValue<int>(line.substring(4).toInt(), 0) * 1000UL;
+    const uint32_t intervalSeconds = static_cast<uint32_t>(
+        maxValue<int>(line.substring(4).toInt(), MIN_GAP_SECONDS));
+    cfg.gapMs = intervalSeconds * 1000UL;
+    cycleTiming.gapMs = cfg.gapMs;
+    if (phase == Phase::Gap) {
+      phaseStartedMs = millis();
+    }
     saveRuntimeConfig();
   } else if (line.startsWith("holdpump ")) {
     cfg.holdPumpDuringZero = line.endsWith("on");
@@ -1206,6 +1325,8 @@ void setup() {
   mqtt.setBufferSize(512);
 
   connectWiFiIfNeeded();
+  configTzTime(TIME_ZONE, NTP_SERVER_PRIMARY, NTP_SERVER_SECONDARY,
+               NTP_SERVER_TERTIARY);
   enterPhase(Phase::Gap);
   printHelp();
 }

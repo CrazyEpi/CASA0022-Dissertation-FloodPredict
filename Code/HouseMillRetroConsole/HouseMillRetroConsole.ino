@@ -39,6 +39,10 @@ const int LED_DATA_PIN = 6;
 const uint16_t LED_COUNT = 16;
 const uint8_t LED_BRIGHTNESS = 90;
 const uint32_t STALE_TIMEOUT_MS = 10000;
+const float ZERO_HOURS_THRESHOLD = 0.05f;
+const uint32_t ZERO_FLASH_DURATION_MS = 3000UL;
+const uint32_t ZERO_FLASH_TOGGLE_MS = 250UL;
+const bool LED_PROGRESS_REVERSED = false;
 
 // GPIO 7 must drive a logic-level MOSFET or relay module. Never connect the
 // 12V TN-73 lamp directly to an ESP32 GPIO. Set to -1 to control NeoPixels only.
@@ -65,8 +69,12 @@ float targetVuDuty = VU_DUTY_AT_24_HOURS;
 float lastTimeToFloodHours = FLOOD_DISPLAY_MAX_HOURS;
 int lastIntensity = 0;
 String lastMode = "idle";
+String lastPhase = "unknown";
+String lastRiskLevel = "low";
 ConsoleMode consoleMode = ConsoleMode::Exhibition;
 bool backlightEnabled = true;
+bool zeroHoursActive = false;
+uint32_t zeroFlashStartedMs = 0;
 
 template <typename T>
 T clampValue(T value, T low, T high) {
@@ -180,8 +188,32 @@ uint32_t colorForIntensity(int intensity) {
   return blendRgb(255, 160, 0, 255, 0, 0, map(intensity, 70, 100, 0, 255));
 }
 
+uint32_t colorForRisk() {
+  if (lastRiskLevel == "low") {
+    return colorForIntensity(clampValue(lastIntensity, 0, 35));
+  }
+  if (lastRiskLevel == "medium") {
+    const int amount = map(clampValue(lastIntensity, 45, 70), 45, 70, 0, 255);
+    return blendRgb(255, 210, 0, 255, 92, 0, amount);
+  }
+  return rgb(255, 0, 0);
+}
+
+void showTimeProgress(uint32_t color) {
+  const float progress = clampValue(lastTimeToFloodHours / FLOOD_DISPLAY_MAX_HOURS,
+                                    0.0f, 1.0f);
+  const uint16_t litCount = clampValue<uint16_t>(
+      static_cast<uint16_t>(ceilf(progress * LED_COUNT)), 0, LED_COUNT);
+
+  pixels.clear();
+  for (uint16_t i = 0; i < litCount; i++) {
+    const uint16_t pixelIndex = LED_PROGRESS_REVERSED ? LED_COUNT - 1 - i : i;
+    pixels.setPixelColor(pixelIndex, color);
+  }
+}
+
 void updateLeds() {
-  if (!backlightEnabled || consoleMode == ConsoleMode::Paused) {
+  if (!backlightEnabled || consoleMode == ConsoleMode::Paused || lastPhase == "gap") {
     pixels.clear();
     pixels.show();
     return;
@@ -197,14 +229,19 @@ void updateLeds() {
     return;
   }
 
-  fillPixels(colorForIntensity(lastIntensity));
-
-  if (lastIntensity >= 80) {
-    pixels.setBrightness(pulseBrightness(45, LED_BRIGHTNESS, 850));
-  } else {
+  const uint32_t riskColor = colorForRisk();
+  if (zeroHoursActive) {
+    const uint32_t elapsedMs = millis() - zeroFlashStartedMs;
+    const bool flashOn = elapsedMs < ZERO_FLASH_DURATION_MS &&
+                         ((elapsedMs / ZERO_FLASH_TOGGLE_MS) % 2UL == 1UL);
+    fillPixels(flashOn ? riskColor : 0);
     pixels.setBrightness(LED_BRIGHTNESS);
+    pixels.show();
+    return;
   }
 
+  showTimeProgress(riskColor);
+  pixels.setBrightness(LED_BRIGHTNESS);
   pixels.show();
 }
 
@@ -233,19 +270,38 @@ void handleStatusPayload(uint8_t *payload, unsigned int length) {
     return;
   }
 
-  lastTimeToFloodHours = doc["time_to_flood"] | FLOOD_DISPLAY_MAX_HOURS;
+  lastPhase = doc["phase"] | "unknown";
+  const float nextTimeToFloodHours = doc["time_to_flood"] | FLOOD_DISPLAY_MAX_HOURS;
   lastIntensity = clampValue<int>(doc["intensity"] | 0, 0, 100);
+  if (doc["risk_level"].is<const char *>()) {
+    lastRiskLevel = doc["risk_level"].as<String>();
+  } else if (lastIntensity <= 35) {
+    lastRiskLevel = "low";
+  } else if (lastIntensity <= 70) {
+    lastRiskLevel = "medium";
+  } else {
+    lastRiskLevel = "high";
+  }
+
+  const bool reachedZero = nextTimeToFloodHours <= ZERO_HOURS_THRESHOLD;
+  if (reachedZero && !zeroHoursActive) {
+    zeroFlashStartedMs = millis();
+  }
+  zeroHoursActive = reachedZero;
+  lastTimeToFloodHours = nextTimeToFloodHours;
   lastMessageMs = millis();
   setVuTargetFromHours(lastTimeToFloodHours);
 
   Serial.print("mode=");
   Serial.print(lastMode);
   Serial.print(" phase=");
-  Serial.print(doc["phase"] | "n/a");
+  Serial.print(lastPhase);
   Serial.print(" time_to_flood=");
   Serial.print(lastTimeToFloodHours, 1);
   Serial.print("h intensity=");
   Serial.print(lastIntensity);
+  Serial.print(" risk=");
+  Serial.print(lastRiskLevel);
   Serial.print(" virtual_water=");
   Serial.print(doc["water_level_percent"] | 0.0);
   Serial.println("%");
@@ -304,6 +360,9 @@ void handleControlPayload(uint8_t *payload, unsigned int length) {
       consoleMode = ConsoleMode::Paused;
     }
     lastMessageMs = 0;
+    lastPhase = "unknown";
+    zeroHoursActive = false;
+    zeroFlashStartedMs = 0;
   }
 
   Serial.print("Control mode=");
