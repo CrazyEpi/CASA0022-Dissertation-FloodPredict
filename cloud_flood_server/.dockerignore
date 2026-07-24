@@ -1,0 +1,14 @@
+.env
+__pycache__/
+**/__pycache__/
+*.pyc
+logs/
+data/*.csv
+data/*.json
+data/*.sqlite
+data/*.sqlite3
+data/*.sqlite3-wal
+data/*.sqlite3-shm
+data/*.db
+runner.pid
+*.log

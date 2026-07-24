@@ -1,0 +1,32 @@
+services:
+  water_collector:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ["python", "server.py", "--mode", "collect-water-mqtt"]
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+
+  predictor_worker:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ["python", "server.py", "--mode", "worker"]
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+
+  api:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ["python", "server.py", "--mode", "server"]
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
