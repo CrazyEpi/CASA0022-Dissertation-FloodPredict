@@ -15,10 +15,10 @@ import pandas as pd
 APP_ROOT = Path(__file__).resolve().parent
 DEFAULT_PROJECT_ROOT = APP_ROOT.parent
 DEFAULT_PREDICTION_DB = (
-    DEFAULT_PROJECT_ROOT / "cloud_flood_server" / "data" / "prediction_history.sqlite3"
+    DEFAULT_PROJECT_ROOT / "forecast_evaluation" / "prediction_history.sqlite3"
 )
 DEFAULT_SONAR_DB = (
-    DEFAULT_PROJECT_ROOT / "cloud_flood_server" / "data" / "sonar_history.sqlite3"
+    DEFAULT_PROJECT_ROOT / "forecast_evaluation" / "sonar_history.sqlite3"
 )
 
 
