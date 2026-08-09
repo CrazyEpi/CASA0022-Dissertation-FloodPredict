@@ -15,7 +15,7 @@ from datetime import datetime
 class Config:
     CSV_PATH = 'C:\\UCL\\Dissertation\\data\\house_mill_integrated_dataset.csv'
     SAVE_MODEL_PATH = 'kratzert_lstm_housemill.pth'
-    SEQ_LENGTH = 336
+    SEQ_LENGTH = 672
     FORECAST_LEAD = 96
     HIDDEN_SIZE = 20
     NUM_LAYERS = 1
