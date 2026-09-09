@@ -6,7 +6,7 @@ The main research question is whether a site-specific system can provide useful 
 
 > **Research prototype:** This system is an academic prototype. It is not a certified flood-warning service and should not be used as the only basis for safety decisions.
 
-![FloodPredict system workflow](figure/workflow.png)
+<img width="1600" height="900" alt="slide-2" src="https://github.com/user-attachments/assets/128c0b40-07b5-485c-b40b-c06763c476dd" />
 
 ## Project Components
 
@@ -58,7 +58,7 @@ PatchTST is the main forecasting model. It divides each input variable into over
 
 The modified model uses an asymmetric Huber-based regression loss to give more attention to high-water errors and underprediction. A separate classification head acts as a confidence check for predicted threshold crossings without replacing the continuous water-level forecast.
 
-![Modified PatchTST architecture](figure/patchtst.png)
+<img width="1600" height="900" alt="slide-3" src="https://github.com/user-attachments/assets/0294f269-37ad-4024-962b-9ef327361df4" />
 
 ## Risk Communication
 
@@ -82,9 +82,7 @@ The project includes two ESP32-S3 devices:
 
 The warning console can receive real forecasts directly from the cloud server through the `forecast` MQTT topic. In exhibition mode, the model controller publishes simulated pump state, risk, and ETA through the `status` topic. Remote commands affect only the exhibition mode and do not modify cloud forecast results.
 
-![Completed warning console and exhibition device](figure/device.JPG)
-
-Hardware designs and firmware are available in [`3DModels/`](3DModels/) and [`Code/`](Code/).
+<img width="3162" height="2501" alt="device" src="https://github.com/user-attachments/assets/b56d397d-08b0-4619-bde1-56fb4ad1a2c2" />
 
 ## Evaluation Results
 
@@ -115,7 +113,7 @@ The DigitalOcean deployment generated 817 forecast runs. After incomplete future
 
 No observed flood crossed the 4.20 m Caution threshold during the evaluated live period. The live results therefore demonstrate continuous water-level forecasting under non-flood conditions, but not live flood-event detection. Historical event testing provides the current evidence for recall, precision, and warning lead time.
 
-![Normal and rapid-rise forecast comparison](figure/result_normal_vs_rapid_rise.png)
+<img width="1400" height="680" alt="result_normal_vs_rapid_rise" src="https://github.com/user-attachments/assets/f55a8a47-9b84-4acc-a89e-15989cc1ac51" />
 
 ## Repository Structure
 
@@ -211,14 +209,6 @@ See [`forecast_evaluation/README.md`](forecast_evaluation/README.md) for databas
 - The live evaluation period contained no threshold-crossing flood event.
 - The manually calibrated 4.43 m threshold requires further site validation.
 - Informer and Autoformer are included as related experimental code, but controlled final comparisons were not completed.
-
-## Further Documentation
-
-- [Cloud server deployment](cloud_flood_server/README.md)
-- [DigitalOcean deployment notes](cloud_flood_server/DEPLOY_DIGITALOCEAN.md)
-- [Forecast evaluation](forecast_evaluation/README.md)
-- [MQTT exhibition control](Code/MQTT_REMOTE_CONTROL.md)
-- [Dissertation LaTeX source](latex/housemill_flood_prediction_with_figures.tex)
 
 ## Academic References
 
